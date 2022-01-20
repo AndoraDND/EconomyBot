@@ -61,9 +61,13 @@ namespace EconomyBot.Commands
                 eb.WithTitle(FormatToTitleCase(item.Item1));
                 eb.WithAuthor($"Category: {item.Item2}");
                 eb.WithColor(new Color(0xf1, 0xc5, 0x5f));
+
                 eb.AddField(new EmbedFieldBuilder().WithName("Average Price").WithValue(_andoraService.PriceDB.FormatGold(item.Item3)).WithIsInline(false));
-                eb.AddField(new EmbedFieldBuilder().WithName("Lowest Price").WithValue(_andoraService.PriceDB.FormatGold(item.Item4)).WithIsInline(false));
-                eb.AddField(new EmbedFieldBuilder().WithName("Highest Price").WithValue(_andoraService.PriceDB.FormatGold(item.Item5)).WithIsInline(false));
+                if (elevatedPermissions) //Don't show hidden details if the user doesn't have staff perms.
+                {
+                    eb.AddField(new EmbedFieldBuilder().WithName("Lowest Price").WithValue(_andoraService.PriceDB.FormatGold(item.Item4)).WithIsInline(false));
+                    eb.AddField(new EmbedFieldBuilder().WithName("Highest Price").WithValue(_andoraService.PriceDB.FormatGold(item.Item5)).WithIsInline(false));
+                }
 
                 //Clean up the item
                 item = null;
