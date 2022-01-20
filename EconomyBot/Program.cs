@@ -39,7 +39,12 @@ namespace EconomyBot
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Info,
-                MessageCacheSize = 50
+                MessageCacheSize = 50,
+                GatewayIntents = GatewayIntents.AllUnprivileged | 
+                    GatewayIntents.GuildMembers | 
+                    GatewayIntents.DirectMessages | 
+                    GatewayIntents.DirectMessageReactions | 
+                    GatewayIntents.GuildMessageReactions
             });
             _client.Log += Log;
 
@@ -50,7 +55,7 @@ namespace EconomyBot
             });
             _commands.Log += Log;
 
-            _services = ConfigureServices();
+            _services = ConfigureServices(_client);
             await InitCommands();
 
             await _client.LoginAsync(TokenType.Bot, _credentials.Bot_Token);
@@ -63,10 +68,15 @@ namespace EconomyBot
         /// Configure services required for the Command context
         /// </summary>
         /// <returns></returns>
-        private static IServiceProvider ConfigureServices()
+        private static IServiceProvider ConfigureServices(DiscordSocketClient client)
         {
+            var reactionReplyService = new ReactionReplyService();
+            client.ReactionAdded += reactionReplyService.OnReactionReceived;
+            client.MessageReceived += reactionReplyService.OnMessageReceived;
+
             var map = new ServiceCollection()
-                .AddSingleton(new AndoraService());
+                .AddSingleton(new AndoraService())
+                .AddSingleton(reactionReplyService);
 
             return map.BuildServiceProvider();
         }
@@ -143,7 +153,16 @@ namespace EconomyBot
 
                 // Execute the command. (result does not indicate a return value, 
                 // rather an object stating if the command executed successfully).
-                var result = await _commands.ExecuteAsync(context, pos, _services);
+                //try
+                //{
+                    var result = await _commands.ExecuteAsync(context, pos, _services);
+                //}
+                //catch(Exception e)
+                //{
+                //    var owner = await _client.GetUserAsync(126538520193007616);
+                //    await owner.SendMessageAsync($"Economy Bot error: \n{e.Message}\n{e.StackTrace}");
+                //    Console.WriteLine(e.Message + "\n\n" + e.StackTrace);
+                //}
 
                 // Uncomment the following lines if you want the bot
                 // to send a message if it failed.
