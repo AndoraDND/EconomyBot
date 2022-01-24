@@ -210,7 +210,7 @@ namespace EconomyBot
                 if (!elevatedPermissions && !item.Value.Item1.TrimStart().TrimEnd().Equals("General"))
                     continue;
 
-                if(difference == item.Key.Length)
+                if(difference == item.Key.Length && difference == input.Length)
                 {
                     searchList.Clear();
                     searchList.Add(new Tuple<string, int>(item.Key, difference));

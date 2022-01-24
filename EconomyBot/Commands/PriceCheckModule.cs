@@ -120,7 +120,7 @@ namespace EconomyBot.Commands
 
                 string itemNameInput = input.Substring(firstIndex+1, (lastIndex - firstIndex) - 1);
                 var args = new string[2];
-                args[0] = itemNameInput;
+                args[0] = itemNameInput.Replace(",", ""); //Sanitize inputs so we dont have weird csv reactions
 
                 if(input.Length <= lastIndex+1)
                 {
@@ -219,7 +219,7 @@ namespace EconomyBot.Commands
                     return;
                 }
 
-                await ReplyAsync("Item successfully added to database!");
+                await ReplyAsync("Item price successfully updated in database!");
             }
             else
             {

@@ -21,6 +21,11 @@ namespace EconomyBot
         private ProgramData _data;
 
         /// <summary>
+        /// Time to handle occasional polling updates. Unit is Milliseconds
+        /// </summary>
+        private int _updateTimer = 60 * 1000;
+
+        /// <summary>
         /// Launch Async environment
         /// </summary>
         /// <param name="args"></param>
@@ -61,7 +66,22 @@ namespace EconomyBot
             await _client.LoginAsync(TokenType.Bot, _credentials.Bot_Token);
             await _client.StartAsync();
 
-            await Task.Delay(-1);
+            while (true)
+            {
+                //Update
+                await UpdateTask();
+                await Task.Delay(_updateTimer);
+            }
+        }
+
+        /// <summary>
+        /// Looping update check
+        /// </summary>
+        /// <returns></returns>
+        private async Task UpdateTask()
+        {
+            Console.WriteLine("Test");
+            await Task.Delay(100);
         }
 
         /// <summary>
