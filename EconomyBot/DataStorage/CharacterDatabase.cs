@@ -1,11 +1,148 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
+using Google.Apis.Sheets.v4.Data;
 using Microsoft.Data.Sqlite;
 
 namespace EconomyBot.DataStorage
 {
+    public class CharacterDatabase
+    {
+        private Discord.WebSocket.DiscordSocketClient _discordClient;
+
+        private List<CharacterData> _cachedCharacterData;
+
+        /// <summary>
+        /// Google Sheets runtime service
+        /// </summary>
+        private SheetsService _service;
+
+        /// <summary>
+        /// Google Sheets service allowed scopes
+        /// </summary>
+        private static string[] Scopes = { SheetsService.Scope.Spreadsheets };
+
+        /// <summary>
+        /// Application name used for polling from Google
+        /// </summary>
+        private static string ApplicationName = "Andora GSheets Parser";
+
+        /// <summary>
+        /// API URI stub used for making RESTful calls to our backend service.
+        /// </summary>
+        public string BackendServiceURI = "";
+
+        public CharacterDatabase(Discord.WebSocket.DiscordSocketClient client, string googleCredentialsPath)
+        {
+            _cachedCharacterData = new List<CharacterData>();
+            _discordClient = client;
+
+            //Create google sheets lookup, for lookups related to our google sheet character database
+            //Load Google Sheets credentials
+            var credential = GoogleCredential.FromFile(googleCredentialsPath).CreateScoped(Scopes);
+            _service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName
+            });
+        }
+
+        /// <summary>
+        /// Get character data from this database.
+        /// </summary>
+        /// <param name="discordID"></param>
+        /// <returns></returns>
+        public async Task<CharacterData> GetCharacterData(ulong discordID)
+        {
+            var characterDataIndex = _cachedCharacterData.FindIndex(p => p.DiscordID.Equals(discordID));
+            if(characterDataIndex >= 0)
+            {
+                return _cachedCharacterData[characterDataIndex];
+            }
+
+            //Didn't find character data within cached list
+            return await PollCharacterData(discordID);
+        }
+
+        /// <summary>
+        /// Poll the character data necessary from a relevant service.
+        /// TODO: Implement management for handling our RESTful service.
+        /// </summary>
+        /// <param name="discordID"></param>
+        /// <returns></returns>
+        private async Task<CharacterData> PollCharacterData(ulong discordID)
+        {
+            //Get the expected Discord user, find their name. This will be used for parsing our google sheet
+            var discordUser = await _discordClient.GetUserAsync(discordID);
+            var discordName = $"{discordUser.Username}#{discordUser.Discriminator}";
+
+            if(BackendServiceURI.Length > 0)
+            {
+                //TODO: Implement this portion
+                return default(CharacterData);
+            }
+            else
+            {
+                var sheetURLStub = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
+                var range = "'Player character sheet'!A2:D";
+                try
+                {
+                    SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(sheetURLStub, range);
+                    ValueRange response = await request.ExecuteAsync();
+
+                    var values = response.Values.Where(p => p.Count > 0 && ((string)p[1]).Contains(discordUser.Username));
+
+                    if (values.Count() > 0)
+                    {
+                        var sData = values.Last();
+
+                        var characterData = new CharacterData()
+                        {
+                            DiscordID = discordID,
+                            DiscordName = (string)sData[1],
+                            CharacterName = (string)sData[2],
+                            AvraeURL = ((string)sData[3]).Replace("https://docs.google.com/spreadsheets/d/", "").Split('/')[0]
+                        };
+
+                        _cachedCharacterData.Add(characterData);
+
+                        return characterData;
+                    }
+                    return default(CharacterData);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to poll Database Sheet: {0}", e.Message);
+                    return default(CharacterData);
+                }
+            }
+
+            
+        }
+
+        /// <summary>
+        /// Get all data currently within this database.
+        /// </summary>
+        /// <returns></returns>
+        internal string Dump()
+        {
+            var output = "";
+            foreach(var character in _cachedCharacterData)
+            {
+                output += character.Print() + "\n\n";
+            }
+            return output;
+        }
+    }
+
+    #region OLD
+#if false
     public class CharacterDatabase
     {
         //Database storage:
@@ -63,8 +200,11 @@ namespace EconomyBot.DataStorage
 
             return true;
         }
-
-        public void PollAllCharacters()
+        
+        /// <summary>
+        /// Select *, profit
+        /// </summary>
+        public void PrintDatabase()
         {
             try
             {
@@ -193,4 +333,6 @@ namespace EconomyBot.DataStorage
             return null;
         }
     }
+#endif
+#endregion
 }

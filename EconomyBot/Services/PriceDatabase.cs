@@ -292,5 +292,43 @@ namespace EconomyBot
 
             SaveDatabase(_databaseFileName);
         }
+
+        /// <summary>
+        /// Get all data currently within this database.
+        /// </summary>
+        /// <returns></returns>
+        internal string Dump()
+        {
+            var output = "";
+            foreach (var item in _storedData)
+            {
+                output += PrintItem(item) + "\n\n";
+            }
+            return output;
+        }
+
+        /// <summary>
+        /// Print the data for an object stored in this database.
+        /// </summary>
+        /// <param name="itemData"></param>
+        /// <param name="indent"></param>
+        /// <returns></returns>
+        private string PrintItem(KeyValuePair<string, Tuple<string, int, int, int>> itemData, int indent = 4)
+        {
+            var indentSpace = "";
+            for (int i = 0; i < indent; i++)
+            {
+                indentSpace += " ";
+            }
+
+            var retVal = "";
+            retVal = $"{indentSpace}ItemName: {itemData.Key},\n" +
+                $"{indentSpace}Category: {itemData.Value.Item1},\n" +
+                $"{indentSpace}Market_Avg: {itemData.Value.Item2},\n" +
+                $"{indentSpace}Market_Low: {itemData.Value.Item3},\n" +
+                $"{indentSpace}Market_High: {itemData.Value.Item4}";
+            return retVal;
+        }
+
     }
 }

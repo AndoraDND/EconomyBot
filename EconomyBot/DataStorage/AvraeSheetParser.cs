@@ -77,10 +77,10 @@ namespace EconomyBot.DataStorage
         private const string Range_InventoryColumn1 = "'Inventory'!I3:W76";
         private const string Range_InventoryColumn2 = "'Inventory'!Z3:AN76";
 
-        public AvraeSheetParser(string credentialsPath)
+        public AvraeSheetParser(string googleCredentialsPath)
         {
             //Load Google Sheets credentials
-            var credential = GoogleCredential.FromFile(credentialsPath).CreateScoped(Scopes);
+            var credential = GoogleCredential.FromFile(googleCredentialsPath).CreateScoped(Scopes);
             _service = new SheetsService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,

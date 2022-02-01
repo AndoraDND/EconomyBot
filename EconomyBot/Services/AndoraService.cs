@@ -38,11 +38,13 @@ namespace EconomyBot
         /// </summary>
         public Dictionary<string, int> DTDToolValues { get; set; }
 
-        public AndoraService()
+        public AndoraService(Discord.WebSocket.DiscordSocketClient client)
         {
+            var gSheetsCredPath = "Data\\andora-3db990b2eff4.json";
+
             PriceDB = new PriceDatabase("PriceDB");
-            AvraeParser = new AvraeSheetParser("Data\\andora-3db990b2eff4.json");
-            CharacterDB = new CharacterDatabase();
+            AvraeParser = new AvraeSheetParser(gSheetsCredPath);
+            CharacterDB = new CharacterDatabase(client, gSheetsCredPath);
 
             //Import elevated roles
             ElevatedStatusRoles = new List<ulong>();
