@@ -90,6 +90,7 @@ namespace EconomyBot.Commands
 
             await ReplyAsync("Successfully added the message to the database!");
         }
+
         [Command("remove", RunMode = RunMode.Async), Alias("r"), Summary("Remove a message from the queue")]
         public async Task RemoveMessageCommandAsync([Remainder] string input)
         {

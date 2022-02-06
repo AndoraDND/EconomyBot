@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="md &quot;$(ProjectDir)$(OutDir)Data&quot;&#xD;&#xA;md &quot;$(ProjectDir)$(OutDir)Data\DB&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\DTDToolValues.csv&quot;  &quot;$(OutDir)Data\DB\&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\PriceDB.csv&quot;  &quot;$(OutDir)\Data\DB\&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\ElevatedRoleData.csv&quot;  &quot;$(OutDir)\Data\DB\&quot;" />
+    <Exec Command="md &quot;$(ProjectDir)$(OutDir)Data&quot;&#xD;&#xA;md &quot;$(ProjectDir)$(OutDir)Data\DB&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\DTDToolValues.csv&quot;  &quot;$(OutDir)Data\DB\&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\PriceDB.csv&quot;  &quot;$(OutDir)\Data\DB\&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\ElevatedRoleData.csv&quot;  &quot;$(OutDir)\Data\DB\&quot;&#xD;&#xA;xcopy /y &quot;$(ProjectDir)Data\DB\NPCPingServerData.csv&quot;  &quot;$(OutDir)\Data\DB\&quot;" />
   </Target>
 
 </Project>

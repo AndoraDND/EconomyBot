@@ -14,6 +14,11 @@ namespace EconomyBot
         public string CurrentYear { get { return "100"; } }
 
         /// <summary>
+        /// Service that manages NPC pings.
+        /// </summary>
+        public NPCPingService NPCPingService { get; set; }
+
+        /// <summary>
         /// Database for Item costs
         /// </summary>
         public PriceDatabase PriceDB { get; set; }
@@ -42,6 +47,7 @@ namespace EconomyBot
         {
             var gSheetsCredPath = "Data\\andora-3db990b2eff4.json";
 
+            NPCPingService = new NPCPingService(client);
             PriceDB = new PriceDatabase("PriceDB");
             AvraeParser = new AvraeSheetParser(gSheetsCredPath);
             CharacterDB = new CharacterDatabase(client, gSheetsCredPath);

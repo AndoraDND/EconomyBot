@@ -21,6 +21,7 @@ namespace EconomyBot
         private ProgramData _data;
 
         internal static MessageHandler _messageHandler;
+        private NPCPingService _npcPingService;
 
         /// <summary>
         /// Time to handle occasional polling updates. Unit is Milliseconds
@@ -55,6 +56,8 @@ namespace EconomyBot
             });
             _client.Log += Log;
 
+            
+
             _messageHandler = new MessageHandler();
             //_messageHandler.AddMessage("DTD has been reset for this week!", 934921635914481734, 934929339743625276, DateTime.Parse("02/06/2022 12:00:00"), TimeSpan.FromDays(7));
             //_messageHandler.AddMessage("<@&929483390934216784>", 929453375257444362, 929453375257444365, DateTime.Now + TimeSpan.FromMinutes(1));
@@ -67,6 +70,11 @@ namespace EconomyBot
             _commands.Log += Log;
 
             _services = ConfigureServices(_client);
+
+            //Set up event management for NPC pings
+            _npcPingService = ((AndoraService)_services.GetService(typeof(AndoraService))).NPCPingService;
+            _client.MessageReceived += HandleMessageAsync;
+
             await InitCommands();
 
             await _client.LoginAsync(TokenType.Bot, _credentials.Bot_Token);
@@ -99,8 +107,10 @@ namespace EconomyBot
             client.ReactionAdded += reactionReplyService.OnReactionReceived;
             client.MessageReceived += reactionReplyService.OnMessageReceived;
 
+            var andoraService = new AndoraService(client);
+            
             var map = new ServiceCollection()
-                .AddSingleton(new AndoraService(client))
+                .AddSingleton(andoraService)
                 .AddSingleton(reactionReplyService);
 
             return map.BuildServiceProvider();
@@ -149,6 +159,11 @@ namespace EconomyBot
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             _client.MessageReceived += HandleCommandAsync;
+        }
+
+        private async Task HandleMessageAsync(SocketMessage arg)
+        {
+            await _npcPingService.HandleMessageReceived(arg);
         }
 
         /// <summary>
