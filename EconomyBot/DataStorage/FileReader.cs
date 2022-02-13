@@ -8,11 +8,11 @@ namespace EconomyBot.DataStorage
     internal static class FileReader
     {
         private static readonly string CurrentDirectory = Directory.GetCurrentDirectory(); 
-        private const string FilePath = "\\Data";
-        private const string LogsPath = FilePath + "\\Logs";
-        private const string DebugLogsPath = LogsPath + "\\DebugLogs";
-        private const string ErrorLogsPath = LogsPath + "\\ErrorLogs";
-        private const string DatabasePath = FilePath + "\\DB";
+        private const string FilePath = "/Data";
+        private const string LogsPath = FilePath + "/Logs";
+        private const string DebugLogsPath = LogsPath + "/DebugLogs";
+        private const string ErrorLogsPath = LogsPath + "/ErrorLogs";
+        private const string DatabasePath = FilePath + "/DB";
 
         private static bool hasCheckedDirectories = false;
 
@@ -54,7 +54,7 @@ namespace EconomyBot.DataStorage
             HandleFolderDirectories();
 
             string retVal = null;
-            var path = CurrentDirectory + DatabasePath + "\\" + fileName + ".json";
+            var path = CurrentDirectory + DatabasePath + "/" + fileName + ".json";
             if (File.Exists(path))
             {
                 return File.ReadAllText(path);
@@ -74,7 +74,7 @@ namespace EconomyBot.DataStorage
         internal static void WriteCSV(string fileName, string fileData)
         {
             HandleFolderDirectories();
-            var path = CurrentDirectory + DatabasePath + "\\" + fileName + ".csv";
+            var path = CurrentDirectory + DatabasePath + "/" + fileName + ".csv";
 
             File.WriteAllText(path, fileData);
         }
@@ -89,7 +89,7 @@ namespace EconomyBot.DataStorage
             HandleFolderDirectories();
 
             Dictionary<string, string[]> retVal = null;
-            var path = CurrentDirectory + DatabasePath + "\\" + fileName + ".csv";
+            var path = CurrentDirectory + DatabasePath + "/" + fileName + ".csv";
             if (File.Exists(path))
             {
                 retVal = new Dictionary<string, string[]>();

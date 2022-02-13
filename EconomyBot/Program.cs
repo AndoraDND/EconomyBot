@@ -138,14 +138,14 @@ namespace EconomyBot
         /// </summary>
         private void LoadProgramData()
         {
-            if(!Directory.Exists(Directory.GetCurrentDirectory() + "\\Data"))
+            if(!Directory.Exists(Directory.GetCurrentDirectory() + "/Data"))
             {
-                Directory.CreateDirectory(Directory.GetCurrentDirectory() + "\\Data");
+                Directory.CreateDirectory(Directory.GetCurrentDirectory() + "/Data");
             }
 
-            if (File.Exists("Data\\TokenCredentials.json"))
+            if (File.Exists("Data/TokenCredentials.json"))
             {
-                _credentials = JsonConvert.DeserializeObject<TokenCredentials>(File.ReadAllText("Data\\TokenCredentials.json"));
+                _credentials = JsonConvert.DeserializeObject<TokenCredentials>(File.ReadAllText("Data/TokenCredentials.json"));
             }
             else
             {
@@ -153,17 +153,17 @@ namespace EconomyBot
                 {
                     Bot_Token = ""
                 };
-                File.WriteAllText("Data\\TokenCredentials.json", JsonConvert.SerializeObject(_credentials));
+                File.WriteAllText("Data/TokenCredentials.json", JsonConvert.SerializeObject(_credentials));
             }
 
-            if(File.Exists("Data\\ProgramData.json"))
+            if(File.Exists("Data/ProgramData.json"))
             {
-                _data = JsonConvert.DeserializeObject<ProgramData>(File.ReadAllText("Data\\ProgramData.json"));
+                _data = JsonConvert.DeserializeObject<ProgramData>(File.ReadAllText("Data/ProgramData.json"));
             }
             else
             {
                 _data = new ProgramData();
-                File.WriteAllText("Data\\ProgramData.json", JsonConvert.SerializeObject(_data));
+                File.WriteAllText("Data/ProgramData.json", JsonConvert.SerializeObject(_data));
             }
         }
 

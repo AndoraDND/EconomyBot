@@ -51,7 +51,7 @@ namespace EconomyBot
 
         internal AndoraService(Discord.WebSocket.DiscordSocketClient client, TokenCredentials credentials)
         {
-            var gSheetsCredPath = "Data\\andora-3db990b2eff4.json";
+            var gSheetsCredPath = "Data/andora-3db990b2eff4.json";
 
             NPCPingService = new NPCPingService(client);
             PriceDB = new PriceDatabase("PriceDB");
