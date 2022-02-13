@@ -46,7 +46,7 @@ Additionally, you may use "unspecified" or "none" as tools for this command.
 **Days**
 Number of days to commit to this job. This determines the final payout.
 
-**Usage: **
+**Usage:**
 > /dtd job Cook's Utensils, 4
 
 This will give a calculated value of gold earned for using Cook's Utensils for four days.
@@ -72,7 +72,7 @@ Not yet implemented! Commit DTD to traveling between regions. Currently this isn
 ### Price Check Module
 #### /price
 Check the price of an item by its name. Will give close options should the item not be exact in name.
-**Usage: ** 
+**Usage:** 
 > /price Potion of Healing
 
 ## Admin Commands
@@ -85,7 +85,7 @@ Deprecated command. Originally was utilized to verify the amount of gold earned 
 ### Price Check Module
 #### /price
 Functionally the same as the command without permissions. However, those with Staff role or higher can see additional information such as Market high/low values, as well as can see items of non-general category.
-**Usage: ** 
+**Usage:** 
 > /price Potion of Healing
 
 #### /price add
@@ -133,14 +133,14 @@ For commands that recurr, use the following syntax:
 This can be read as follows:
 > DAYS.HOURS:MINUTES:SECONDS
 
-**Usage: **
+**Usage:**
 > /message add Don't forget Chicka loves you all <@&934921635948019790>, 2/2/2022 5:00:00 PM, 01:00:00
 
 This will send a "Don't forget Chicka loves you all <@&934921635948019790>" message every hour starting at 5pm on 2/2/2022.
 
 #### /message remove 
 Remove a message held in the message queue. This requires specific knowledge of GUID of a message, which can either be looked up manually in the files or via the debug dump command.
-**Usage: **
+**Usage:**
 > /message remove 1feabcf9-1217-4a40-89ff-6f9db918e74a
 
 ### NPC Ping Service Module
@@ -149,25 +149,25 @@ Used for tracking pings by certain roles. This is most notably used for tracking
 #### /ping_svc watch
 Adds a channel to the watched channel list for this service. Any pings for the specific role that show up here will be managed.
 
-**Usage: **
+**Usage:**
 > /ping_svc watch #redhold
 
 #### /ping_svc rwatch
 Removes a channel from the watched channel list for this service.
 
-**Usage: **
+**Usage:**
 > /ping_svc rwatch #redhold
 
 #### /ping_svc role
 Set a role in which will be observed for pings in relevant channels within this server.
 
-**Usage: **
+**Usage:**
 > /ping_svc role @NPC
 
 #### /ping_svc report_channel
 Set a channel in which detailed data will be posted related to the ping. This is used to designate a channel for posting to.
 
-**Usage: **
+**Usage:**
 > /ping_svc report_channel #npc-pings-requests
 
 ### Debug Module
