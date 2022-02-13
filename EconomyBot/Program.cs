@@ -23,6 +23,10 @@ namespace EconomyBot
         internal static MessageHandler _messageHandler;
         private NPCPingService _npcPingService;
 
+        private delegate void WeeklyEvent();
+        private static event WeeklyEvent OnWeeklyRefresh;
+        private DateTime _lastWeeklyUpdate;
+
         /// <summary>
         /// Time to handle occasional polling updates. Unit is Milliseconds
         /// </summary>
@@ -56,8 +60,6 @@ namespace EconomyBot
             });
             _client.Log += Log;
 
-            
-
             _messageHandler = new MessageHandler();
             //_messageHandler.AddMessage("DTD has been reset for this week!", 934921635914481734, 934929339743625276, DateTime.Parse("02/06/2022 12:00:00"), TimeSpan.FromDays(7));
             //_messageHandler.AddMessage("<@&929483390934216784>", 929453375257444362, 929453375257444365, DateTime.Now + TimeSpan.FromMinutes(1));
@@ -69,7 +71,7 @@ namespace EconomyBot
             });
             _commands.Log += Log;
 
-            _services = ConfigureServices(_client);
+            _services = ConfigureServices(_client, _credentials);
 
             //Set up event management for NPC pings
             _npcPingService = ((AndoraService)_services.GetService(typeof(AndoraService))).NPCPingService;
@@ -80,6 +82,13 @@ namespace EconomyBot
             await _client.LoginAsync(TokenType.Bot, _credentials.Bot_Token);
             await _client.StartAsync();
 
+            Console.WriteLine($"Current Time: {DateTime.Now.ToString()}");
+            var nextSunday = DateTime.Now.Date;
+            nextSunday = nextSunday.AddDays(7 - (int)nextSunday.DayOfWeek);
+            nextSunday = nextSunday.AddHours(12);
+            _lastWeeklyUpdate = DateTime.Parse(nextSunday.ToString());
+            Console.WriteLine($"Next Weekly Refresh Time: {nextSunday.ToString()}");
+            
             while (true)
             {
                 //Update
@@ -95,19 +104,27 @@ namespace EconomyBot
         private async Task UpdateTask()
         {
             await _messageHandler.Tick(_client);
+
+            if(DateTime.Now >= _lastWeeklyUpdate)
+            {
+                //Update the refresh time.
+                _lastWeeklyUpdate = _lastWeeklyUpdate.AddDays(7);
+                OnWeeklyRefresh?.Invoke();
+            }
         }
 
         /// <summary>
         /// Configure services required for the Command context
         /// </summary>
         /// <returns></returns>
-        private static IServiceProvider ConfigureServices(DiscordSocketClient client)
+        private static IServiceProvider ConfigureServices(DiscordSocketClient client, TokenCredentials credentials)
         {
             var reactionReplyService = new ReactionReplyService();
             client.ReactionAdded += reactionReplyService.OnReactionReceived;
             client.MessageReceived += reactionReplyService.OnMessageReceived;
 
-            var andoraService = new AndoraService(client);
+            var andoraService = new AndoraService(client, credentials);
+            OnWeeklyRefresh += andoraService.OnWeeklyRefresh;
             
             var map = new ServiceCollection()
                 .AddSingleton(andoraService)

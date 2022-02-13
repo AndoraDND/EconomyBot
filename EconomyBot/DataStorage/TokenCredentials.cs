@@ -8,5 +8,7 @@ namespace EconomyBot.DataStorage
     internal class TokenCredentials
     {
         public string Bot_Token;
+        public string AndoraDB_User;
+        public string AndoraDB_Pass;
     }
 }

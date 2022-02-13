@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using EconomyBot.Commands;
 using EconomyBot.DataStorage;
 
@@ -34,6 +35,11 @@ namespace EconomyBot
         public CharacterDatabase CharacterDB { get; set; }
 
         /// <summary>
+        /// Hastur backend service. Used for storage of data for characters
+        /// </summary>
+        public AndoraDatabase AndoraDB { get; set; }
+
+        /// <summary>
         /// Lookup table for specific roles
         /// </summary>
         public List<ulong> ElevatedStatusRoles { get; set; }
@@ -43,14 +49,18 @@ namespace EconomyBot
         /// </summary>
         public Dictionary<string, int> DTDToolValues { get; set; }
 
-        public AndoraService(Discord.WebSocket.DiscordSocketClient client)
+        internal AndoraService(Discord.WebSocket.DiscordSocketClient client, TokenCredentials credentials)
         {
             var gSheetsCredPath = "Data\\andora-3db990b2eff4.json";
 
             NPCPingService = new NPCPingService(client);
             PriceDB = new PriceDatabase("PriceDB");
             AvraeParser = new AvraeSheetParser(gSheetsCredPath);
-            CharacterDB = new CharacterDatabase(client, gSheetsCredPath);
+            
+            AndoraDB = new AndoraDatabase(credentials);
+            System.Threading.Tasks.Task.Run(async () => await AndoraDB.RefreshLoginCredentials());
+
+            CharacterDB = new CharacterDatabase(client, gSheetsCredPath, AndoraDB);
 
             //Import elevated roles
             ElevatedStatusRoles = new List<ulong>();
@@ -88,6 +98,20 @@ namespace EconomyBot
 
 
             //FileReader.WriteCSV("DTDToolValues", tempStr);
+        }
+
+        /// <summary>
+        /// Update each member's specific events as requested via a weekly refresh.
+        /// </summary>
+        internal void OnWeeklyRefresh()
+        {
+            Console.WriteLine("Updating Andora Database expired credentials...");
+            var task = Task.Run(async () => await AndoraDB.RefreshLoginCredentials());
+            task.Wait();
+
+            Console.WriteLine("Resetting DTD for players in Andora Database...");
+            task = Task.Run(async () => await AndoraDB.Patch_ResetDTD());
+            task.Wait();
         }
     }
 }

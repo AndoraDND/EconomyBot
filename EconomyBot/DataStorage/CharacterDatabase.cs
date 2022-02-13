@@ -32,16 +32,17 @@ namespace EconomyBot.DataStorage
         /// Application name used for polling from Google
         /// </summary>
         private static string ApplicationName = "Andora GSheets Parser";
-
+        
         /// <summary>
-        /// API URI stub used for making RESTful calls to our backend service.
+        /// Backend service to call upon primarily before checking google sheets
         /// </summary>
-        public string BackendServiceURI = "";
+        public AndoraDatabase _andoraDB = null;
 
-        public CharacterDatabase(Discord.WebSocket.DiscordSocketClient client, string googleCredentialsPath)
+        public CharacterDatabase(Discord.WebSocket.DiscordSocketClient client, string googleCredentialsPath, AndoraDatabase backend = null)
         {
             _cachedCharacterData = new List<CharacterData>();
             _discordClient = client;
+            _andoraDB = backend;
 
             //Create google sheets lookup, for lookups related to our google sheet character database
             //Load Google Sheets credentials
@@ -82,37 +83,72 @@ namespace EconomyBot.DataStorage
             var discordUser = await _discordClient.GetUserAsync(discordID);
             var discordName = $"{discordUser.Username}#{discordUser.Discriminator}";
 
-            if(BackendServiceURI.Length > 0)
+            bool backend_success = false;
+            if(_andoraDB != null)
             {
-                //TODO: Implement this portion
-                return default(CharacterData);
+                var characterJson = await _andoraDB.Get_FindCharacterData(discordID);
+
+                if (characterJson != null)
+                {
+                    backend_success = true;
+
+                    var characterData = new CharacterData(characterJson);
+                    characterData.DiscordName = discordName;
+
+                    return characterData;
+                }
             }
-            else
+            
+            if(!backend_success)
             {
                 var sheetURLStub = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
-                var range = "'Player character sheet'!A2:D";
+                var range = "'Player character sheet'!A2:P";
                 try
                 {
                     SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(sheetURLStub, range);
                     ValueRange response = await request.ExecuteAsync();
 
                     var values = response.Values.Where(p => p.Count > 0 && ((string)p[1]).Contains(discordUser.Username));
-
+                    
                     if (values.Count() > 0)
                     {
                         var sData = values.Last();
+
+                        if (!int.TryParse((string)sData[11], out var exp)) exp = 1;
+                        if (!int.TryParse((string)sData[12], out var level)) level = 1;
+                        if (!DateTime.TryParse((string)sData[15], out var lastplayed))
+                        {
+                            if (!DateTime.TryParse((string)sData[0], out lastplayed))
+                            {
+                                Console.WriteLine("Error encountered while assigning last played datetime for character. Aborting poll...");
+                                return default(CharacterData);
+                            }
+                        }
 
                         var characterData = new CharacterData()
                         {
                             DiscordID = discordID,
                             DiscordName = (string)sData[1],
                             CharacterName = (string)sData[2],
-                            AvraeURL = ((string)sData[3]).Replace("https://docs.google.com/spreadsheets/d/", "").Split('/')[0]
+                            AvraeURL = ((string)sData[3]).Replace("https://docs.google.com/spreadsheets/d/", "").Split('/')[0],
+                            Region = ((string)sData[6]),
+                            Faction = ((string)sData[9]),
+                            Race = ((string)sData[10]),
+                            Experience = exp,
+                            Level = level,
+                            Class = ((string)sData[13]),
+                            LastPlayed = lastplayed
                         };
 
                         _cachedCharacterData.Add(characterData);
 
+                        await _andoraDB.Post_AddCharacter(characterData);
+
                         return characterData;
+                    }
+                    else
+                    {
+                        throw new Exception($"Attempted and failed to poll character from googl sheets: \nName : < {discordUser.Username} > \nID : < {discordUser.Id} >");
                     }
                     return default(CharacterData);
                 }
@@ -123,7 +159,7 @@ namespace EconomyBot.DataStorage
                 }
             }
 
-            
+            return default(CharacterData);
         }
 
         /// <summary>
