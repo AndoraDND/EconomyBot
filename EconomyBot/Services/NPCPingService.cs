@@ -255,6 +255,9 @@ namespace EconomyBot
                     {
                         //Our guild matches, its in a relevant channel, and its the correct role.
 
+                        //Add a "ping received" notification
+                        await msg.AddReactionAsync(Discord.Emoji.Parse("\uD83D\uDC40"));//\x0031\xFE0F\x20E3"));
+
                         var chID = _guildReportChannelLookup[guild.Id];
                         if (chID != ulong.MaxValue)
                         {
