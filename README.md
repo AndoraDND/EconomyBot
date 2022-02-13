@@ -111,22 +111,27 @@ Add a message to the queue of messages handled by this module. The channel the r
 **Parameters:**
 The syntax for this command is as follows
 > /message add Message, Time_To_Post, Recurring_Interval 
+
 **Message**
 The message to be displayed on post. Note that mentions are not automatic, and will require additional input during the command call.
 Example: ***@Players*** -> ***<@&934921635948019790>*** (<@&DISCORD_ID_OF_ROLE>)
+
 **Time_To_Post**
 The time at which this post will be made. Typical syntax for this is as follows:
 > 2/2/2022 12:00:00 PM
+
 **Recurring_Interval**
 The interval at which this command will recurr. For commands that do not recurr, this value should be 0.
 For commands that recurr, use the following syntax:
 > 7.00:00:00
+
 This can be read as follows:
 > DAYS.HOURS:MINUTES:SECONDS
 
 **Usage: **
-> /message add Don't forget Chicka owns you all <@&934921635948019790>, 2/2/2022 5:00:00 PM, 01:00:00
-This will send a "Don't forget Chicka owns you all <@&934921635948019790>" message every hour starting at 5pm on 2/2/2022.
+> /message add Don't forget Chicka loves you all <@&934921635948019790>, 2/2/2022 5:00:00 PM, 01:00:00
+
+This will send a "Don't forget Chicka loves you all <@&934921635948019790>" message every hour starting at 5pm on 2/2/2022.
 
 ##### /message remove 
 Remove a message held in the message queue. This requires specific knowledge of GUID of a message, which can either be looked up manually in the files or via the debug dump command.
