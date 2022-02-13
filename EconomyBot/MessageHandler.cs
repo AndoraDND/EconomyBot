@@ -58,12 +58,20 @@ namespace EconomyBot
             {
                 if (RecurringInterval > default(TimeSpan))  //We don't have a recurring interval
                 {
-                    while (StartTime + RecurringInterval <= DateTime.Now)
+                    while ((StartTime + RecurringInterval) <= DateTime.Now)
                     {
                         StartTime += RecurringInterval;
                     }
 
-                    NextOccurance = StartTime + RecurringInterval;
+                    if (StartTime > DateTime.Now)
+                    {
+                        Console.WriteLine("Encountered Next Occurance edge case. Setting to correct start time.");
+                        NextOccurance = StartTime;
+                    }
+                    else
+                    {
+                        NextOccurance = StartTime + RecurringInterval;
+                    }
                 }
                 else
                 {
@@ -149,7 +157,7 @@ namespace EconomyBot
                     return;
 
                 var newMsg = new MessageObj(msg.Key, msg.Value[0].TrimStart(), ulong.Parse(msg.Value[1]), ulong.Parse(msg.Value[2]), DateTime.Parse(msg.Value[3]), TimeSpan.Parse(msg.Value[4]));
-                newMsg.CalculateNextOccurance();
+                //newMsg.CalculateNextOccurance();
 
                 _loadedMessages.Add(newMsg);
             }

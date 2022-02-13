@@ -149,11 +149,11 @@ namespace EconomyBot
         /// <param name="guild"></param>
         private void AddGuild(ulong guild)
         {
-            if(_guildRoleLookup.ContainsKey(guild)) 
+            if(!_guildRoleLookup.ContainsKey(guild)) 
                 _guildRoleLookup.Add(guild, ulong.MaxValue);
-            if (_guildReportChannelLookup.ContainsKey(guild)) 
+            if (!_guildReportChannelLookup.ContainsKey(guild)) 
                 _guildReportChannelLookup.Add(guild, ulong.MaxValue);
-            if (_guildChannelLookup.ContainsKey(guild))
+            if (!_guildChannelLookup.ContainsKey(guild))
                 _guildChannelLookup.Add(guild, new List<ulong>());
         }
 
