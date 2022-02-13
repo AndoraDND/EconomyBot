@@ -82,7 +82,7 @@ namespace EconomyBot
             await _client.LoginAsync(TokenType.Bot, _credentials.Bot_Token);
             await _client.StartAsync();
 
-            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
             Console.WriteLine($"Current Time: {timeNow.ToString()}");
             var nextSunday = timeNow.Date;
             nextSunday = nextSunday.AddDays(7 - (int)nextSunday.DayOfWeek);
@@ -106,7 +106,7 @@ namespace EconomyBot
         {
             await _messageHandler.Tick(_client);
 
-            if(TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time")) >= _lastWeeklyUpdate)
+            if(TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago")) >= _lastWeeklyUpdate)
             {
                 //Update the refresh time.
                 _lastWeeklyUpdate = _lastWeeklyUpdate.AddDays(7);
@@ -259,7 +259,7 @@ namespace EconomyBot
                     break;
             }
 
-            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
             Console.WriteLine($"[{timeNow.ToShortDateString()}-{timeNow.ToShortTimeString()}] <{msg.Severity}> {msg.Source}: {msg.Message} {msg.Exception}");
             Console.ResetColor();
 

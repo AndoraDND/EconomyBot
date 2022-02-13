@@ -50,7 +50,7 @@ namespace EconomyBot
         /// </summary>
         internal void CalculateNextOccurance()
         {
-            DateTime currentTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            DateTime currentTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
 
             if (StartTime > currentTime)   //Start time is in the future. Do nothing.
             {
@@ -244,7 +244,7 @@ namespace EconomyBot
             if (client.ConnectionState != Discord.ConnectionState.Connected)
                 return;
 
-            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
             for(int i = 0; i < _loadedMessages.Count; i++)
             {
                 if (!_loadedMessages[i].NextOccurance.Equals(default(DateTime)) && _loadedMessages[i].NextOccurance <= timeNow)
