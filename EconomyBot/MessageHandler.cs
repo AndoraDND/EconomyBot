@@ -50,7 +50,9 @@ namespace EconomyBot
         /// </summary>
         internal void CalculateNextOccurance()
         {
-            if (StartTime > DateTime.Now)   //Start time is in the future. Do nothing.
+            DateTime currentTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+
+            if (StartTime > currentTime)   //Start time is in the future. Do nothing.
             {
                 NextOccurance = StartTime;
             }
@@ -58,12 +60,12 @@ namespace EconomyBot
             {
                 if (RecurringInterval > default(TimeSpan))  //We don't have a recurring interval
                 {
-                    while ((StartTime + RecurringInterval) <= DateTime.Now)
+                    while ((StartTime + RecurringInterval) <= currentTime)
                     {
                         StartTime += RecurringInterval;
                     }
 
-                    if (StartTime > DateTime.Now)
+                    if (StartTime > currentTime)
                     {
                         Console.WriteLine("Encountered Next Occurance edge case. Setting to correct start time.");
                         NextOccurance = StartTime;
@@ -76,7 +78,7 @@ namespace EconomyBot
                 else
                 {
                     //What the heck is going on here.
-                    NextOccurance = DateTime.Now + TimeSpan.FromMinutes(10); //Some arbitrary value so the next occurance isn't called.
+                    NextOccurance = currentTime + TimeSpan.FromMinutes(10); //Some arbitrary value so the next occurance isn't called.
                     FlagForDeletion = true; //Delete the message ASAP
 
                     Console.WriteLine("Error: Next occurance while calculating ended up in edge case <Start time already occured and Interval is zero>");
@@ -242,7 +244,7 @@ namespace EconomyBot
             if (client.ConnectionState != Discord.ConnectionState.Connected)
                 return;
 
-            var timeNow = DateTime.Now;
+            var timeNow = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
             for(int i = 0; i < _loadedMessages.Count; i++)
             {
                 if (!_loadedMessages[i].NextOccurance.Equals(default(DateTime)) && _loadedMessages[i].NextOccurance <= timeNow)
