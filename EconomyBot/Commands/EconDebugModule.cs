@@ -56,8 +56,18 @@ namespace EconomyBot.Commands
 
             #endregion
 
+            DateTime dt = default(DateTime);
+            try
+            {
+                dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+            }
+            catch
+            {
+                dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            }
+
             //Create a new dump file and load it with data from this database dump
-            var dumpFilePath = Directory.GetCurrentDirectory() + "/Data/DumpLog_" + TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago")).ToShortTimeString().Replace(':', '-').Replace('_','-') + ".txt";
+            var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + dt.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
             File.WriteAllText(dumpFilePath, _andoraService.CharacterDB.Dump());
 
             //Send the file to the user requesting it
@@ -101,8 +111,18 @@ namespace EconomyBot.Commands
 
             #endregion
 
+            DateTime dt = default(DateTime);
+            try
+            {
+                dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+            }
+            catch
+            {
+                dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            }
+
             //Create a new dump file and load it with data from this database dump
-            var dumpFilePath = Directory.GetCurrentDirectory() + "/Data/DumpLog_" + TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago")).ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
+            var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + dt.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
             File.WriteAllText(dumpFilePath, _andoraService.PriceDB.Dump());
 
             //Send the file to the user requesting it
@@ -147,8 +167,18 @@ namespace EconomyBot.Commands
 
             #endregion
 
+            DateTime dt = default(DateTime);
+            try
+            {
+                dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+            }
+            catch
+            {
+                dt = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+            }
+
             //Create a new dump file and load it with data from this database dump
-            var dumpFilePath = Directory.GetCurrentDirectory() + "/Data/DumpLog_" + TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago")).ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
+            var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + dt.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
             File.WriteAllText(dumpFilePath, Program._messageHandler.Dump());
 
             //Send the file to the user requesting it

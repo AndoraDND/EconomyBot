@@ -2,11 +2,27 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using EconomyBot.DataStorage;
+using Newtonsoft.Json;
 
 namespace EconomyBot
 {
+    [System.Serializable]
+    public class NPCPingGuildData 
+    {
+        public ulong GuildID { get; set; }
+
+        public List<ulong> WatchedChannels { get; set; }
+
+        public List<ulong> TrackedRoles { get; set; } //RoleID
+
+        public Dictionary<ulong, ulong> ReportChannels { get; set; } //RoleID, ChannelID
+    
+        public Dictionary<ulong, Tuple<byte, byte, byte>> RoleEmbedColor { get; set; }
+    }
+
     public class NPCPingService
     {
         /// <summary>
@@ -15,19 +31,9 @@ namespace EconomyBot
         private DiscordSocketClient _client;
 
         /// <summary>
-        /// Collection containing relevant role mentions for this service.
+        /// Dictionary of tracked guilds and their specific data.
         /// </summary>
-        private Dictionary<ulong, ulong> _guildRoleLookup;
-
-        /// <summary>
-        /// Collection containing relevant channels to be watching in each server.
-        /// </summary>
-        private Dictionary<ulong, List<ulong>> _guildChannelLookup;
-
-        /// <summary>
-        /// Collection containing relevant channels to be reported in after NPC pings are made
-        /// </summary>
-        private Dictionary<ulong, ulong> _guildReportChannelLookup;
+        private Dictionary<ulong, NPCPingGuildData> _trackedGuildList;
 
         public NPCPingService(DiscordSocketClient client)
         {
@@ -41,6 +47,7 @@ namespace EconomyBot
         /// </summary>
         private void LoadGuildData()
         {
+#if false
             //Clear the role list if it contains values
             if(_guildRoleLookup != null)
             {
@@ -115,6 +122,17 @@ namespace EconomyBot
                 _guildReportChannelLookup[guildID] = reportChannel;
                 _guildChannelLookup[guildID] = watchedChannels;
             }
+#endif
+
+            var jsonData = FileReader.ReadJSON("NPCPingGuildData");
+            if(jsonData != null)
+            {
+                _trackedGuildList = JsonConvert.DeserializeObject<Dictionary<ulong, NPCPingGuildData>>(jsonData);
+            }
+            else
+            {
+                _trackedGuildList = new Dictionary<ulong, NPCPingGuildData>();
+            }
         }
 
         /// <summary>
@@ -122,6 +140,7 @@ namespace EconomyBot
         /// </summary>
         private void SaveGuildData()
         {
+#if false
             string fileData = "";
 
             foreach(var guild in _client.Guilds)
@@ -141,6 +160,34 @@ namespace EconomyBot
             }
 
             FileReader.WriteCSV("NPCPingServerData", fileData);
+#endif 
+            var jsonData = JsonConvert.SerializeObject(_trackedGuildList);
+            if (jsonData != null)
+            {
+                FileReader.WriteJson("NPCPingGuildData", jsonData);
+            }
+            else
+            {
+                Console.WriteLine("Failed to serialize NPCPingGuildData object.");
+            }
+        }
+
+        internal NPCPingGuildData GetGuildData(ulong guildID)
+        {
+            NPCPingGuildData retVal = null;
+
+            if(_trackedGuildList.ContainsKey(guildID))
+            {
+                retVal = _trackedGuildList[guildID];
+            }
+
+#if false
+            if(_guildChannelLookup.ContainsKey(guildID))
+            {
+                retVal = _guildChannelLookup[guildID];
+            }
+#endif
+            return retVal;
         }
 
         /// <summary>
@@ -149,12 +196,26 @@ namespace EconomyBot
         /// <param name="guild"></param>
         private void AddGuild(ulong guild)
         {
+            if(!_trackedGuildList.ContainsKey(guild))
+            {
+                _trackedGuildList.Add(guild, new NPCPingGuildData() 
+                {
+                    GuildID = guild,
+                    ReportChannels = new Dictionary<ulong, ulong>(),
+                    TrackedRoles = new List<ulong>(),
+                    WatchedChannels = new List<ulong>(),
+                    RoleEmbedColor = new Dictionary<ulong, Tuple<byte, byte, byte>>()
+                });
+            }
+
+#if false
             if(!_guildRoleLookup.ContainsKey(guild)) 
                 _guildRoleLookup.Add(guild, ulong.MaxValue);
             if (!_guildReportChannelLookup.ContainsKey(guild)) 
                 _guildReportChannelLookup.Add(guild, ulong.MaxValue);
             if (!_guildChannelLookup.ContainsKey(guild))
                 _guildChannelLookup.Add(guild, new List<ulong>());
+#endif
         }
 
         /// <summary>
@@ -162,8 +223,21 @@ namespace EconomyBot
         /// </summary>
         /// <param name="guild"></param>
         /// <param name="role"></param>
-        public void SetPingRole(ulong guild, ulong role)
+        public void AddPingRole(ulong guild, ulong role) //SetPingRole
         {
+            AddGuild(guild);
+
+            if(_trackedGuildList.ContainsKey(guild))
+            {
+                if(!_trackedGuildList[guild].TrackedRoles.Contains(role))
+                {
+                    _trackedGuildList[guild].TrackedRoles.Add(role);
+                }
+
+                SaveGuildData();
+            }
+
+#if false
             if(!_guildRoleLookup.ContainsKey(guild))
             {
                 AddGuild(guild);
@@ -172,6 +246,30 @@ namespace EconomyBot
             _guildRoleLookup[guild] = role;
 
             SaveGuildData();
+#endif
+        }
+
+        public void RemovePingRole(ulong guild, ulong role)
+        {
+            if (_trackedGuildList.ContainsKey(guild))
+            {
+                if (_trackedGuildList[guild].TrackedRoles.Contains(role))
+                {
+                    _trackedGuildList[guild].TrackedRoles.Remove(role);
+                }
+
+                if (_trackedGuildList[guild].ReportChannels.ContainsKey(role))
+                {
+                    _trackedGuildList[guild].ReportChannels.Remove(role);
+                }
+
+                if(_trackedGuildList[guild].RoleEmbedColor.ContainsKey(role))
+                {
+                    _trackedGuildList[guild].RoleEmbedColor.Remove(role);
+                }
+
+                SaveGuildData();
+            }
         }
 
         /// <summary>
@@ -179,8 +277,25 @@ namespace EconomyBot
         /// </summary>
         /// <param name="guild"></param>
         /// <param name="channel"></param>
-        public void SetReportChannel(ulong guild, ulong channel)
+        public void SetReportChannel(ulong guild, ulong roleid, ulong channelid)
         {
+            AddGuild(guild);
+
+            if(_trackedGuildList.ContainsKey(guild))
+            {
+                if (!_trackedGuildList[guild].ReportChannels.ContainsKey(roleid))
+                {
+                    _trackedGuildList[guild].ReportChannels.Add(roleid, channelid);
+                }
+                else
+                {
+                    _trackedGuildList[guild].ReportChannels[roleid] = channelid;
+                }
+
+                SaveGuildData();
+            }
+
+#if false
             if (!_guildReportChannelLookup.ContainsKey(guild))
             {
                 AddGuild(guild);
@@ -189,6 +304,7 @@ namespace EconomyBot
             _guildReportChannelLookup[guild] = channel;
 
             SaveGuildData();
+#endif
         }
 
         /// <summary>
@@ -196,8 +312,19 @@ namespace EconomyBot
         /// </summary>
         /// <param name="guild"></param>
         /// <param name="channel"></param>
-        public void AddWatchChannel(ulong guild, ulong channel)
+        public void AddWatchChannel(ulong guild, ulong channelid)
         {
+            AddGuild(guild);
+
+            if(_trackedGuildList.ContainsKey(guild))
+            {
+                if(!_trackedGuildList[guild].WatchedChannels.Contains(channelid))
+                {
+                    _trackedGuildList[guild].WatchedChannels.Add(channelid);
+                }
+            }
+
+#if false
             if (_guildChannelLookup.TryGetValue(guild, out var watchList))
             {
                 if (!watchList.Contains(channel))
@@ -212,6 +339,7 @@ namespace EconomyBot
             }
 
             SaveGuildData();
+#endif
         }
 
         /// <summary>
@@ -221,6 +349,17 @@ namespace EconomyBot
         /// <param name="channel"></param>
         public void RemoveWatchChannel(ulong guild, ulong channel)
         {
+            if(_trackedGuildList.ContainsKey(guild))
+            {
+                if(_trackedGuildList[guild].WatchedChannels.Contains(channel))
+                {
+                    _trackedGuildList[guild].WatchedChannels.Remove(channel);
+                }
+
+                SaveGuildData();
+            }
+
+#if false
             if (_guildChannelLookup.TryGetValue(guild, out var watchList))
             {
                 if (watchList.Contains(channel))
@@ -230,6 +369,48 @@ namespace EconomyBot
             }
 
             SaveGuildData();
+#endif
+        }
+
+        /// <summary>
+        /// Set the color for the embed of a specific ping
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <param name="roleID"></param>
+        /// <param name="hexColorValue"></param>
+        /// <returns></returns>
+        public bool SetColor(ulong guild, ulong roleID, string hexColorValue)
+        {
+            Color color = default(Color);
+            try
+            {
+                var htmlColor = System.Drawing.ColorTranslator.FromHtml(hexColorValue);
+                color = new Color(htmlColor.R, htmlColor.G, htmlColor.B);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
+            }
+
+            if(_trackedGuildList.ContainsKey(guild))
+            {
+                if(_trackedGuildList[guild].TrackedRoles.Contains(roleID))
+                {
+                    if (_trackedGuildList[guild].RoleEmbedColor.ContainsKey(roleID))
+                    {
+                        _trackedGuildList[guild].RoleEmbedColor[roleID] = new Tuple<byte, byte, byte>(color.R, color.G, color.B);
+                    }
+                    else
+                    {
+                        _trackedGuildList[guild].RoleEmbedColor.Add(roleID, new Tuple<byte, byte, byte>(color.R, color.G, color.B));
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal async Task HandleMessageReceived(SocketMessage arg)
@@ -247,6 +428,83 @@ namespace EconomyBot
             if (channel == null) return;
             var guild = channel.Guild;
 
+            if(!_trackedGuildList.TryGetValue(guild.Id, out var guild_data))
+            {
+                //Didn't find guild data. Error out.
+                return;
+            }
+
+            if (guild_data.WatchedChannels.Contains(channel.Id))
+            {
+                foreach(var role in msg.MentionedRoles)
+                {
+                    if(guild_data.TrackedRoles.Contains(role.Id))
+                    {
+                        //Our guild matches, its in a relevant channel, and we have a tracked role.
+
+                        if(guild_data.ReportChannels.TryGetValue(role.Id, out var reportChannelID))
+                        {
+                            //Add a "ping received" notification to the original message.
+                            //We do this now, since we have somewhere for the data to be seen.
+                            await msg.AddReactionAsync(Discord.Emoji.Parse("\uD83D\uDC40"));//\x0031\xFE0F\x20E3"));
+
+                            var reportChannel = guild.GetTextChannel(reportChannelID);
+
+                            var embedBuilder = new Discord.EmbedBuilder();
+
+                            string msgLink = "https://discord.com/channels/" + guild.Id + "/" + channel.Id + "/" + msg.Id;
+
+                            //Set embed color
+                            if (guild_data.RoleEmbedColor.ContainsKey(role.Id))
+                            {
+                                var color = guild_data.RoleEmbedColor[role.Id];
+                                embedBuilder.WithColor(new Discord.Color(color.Item1, color.Item2, color.Item3));
+                            }
+                            else
+                            {
+                                embedBuilder.WithColor(new Discord.Color(88, 148, 216));
+                            }
+                            
+                            embedBuilder.WithAuthor(new Discord.EmbedAuthorBuilder().WithName($"{msg.Author.Username}#{msg.Author.Discriminator}").WithIconUrl(msg.Author.GetAvatarUrl()));
+                            embedBuilder.AddField(new Discord.EmbedFieldBuilder().WithName("Link").WithValue(msgLink));
+
+                            string msgContext = "";
+                            if (msg.Content.Contains('('))
+                            {
+                                if (msg.Content.Contains(')'))
+                                {
+                                    msgContext = msg.Content.Split('(', ')')[1];
+                                }
+                                else
+                                {
+                                    msgContext = msg.Content.Substring(msg.Content.IndexOf('('));
+                                }
+                            }
+                            else
+                            {
+                                var splitMessage = msg.Content.Split(new char[] { '.', '?', '!' });
+                                for(int i = splitMessage.Length-1; i >= 0; i--)
+                                {
+                                    if(splitMessage[i] != null && splitMessage[i].Length > 0)
+                                    {
+                                        msgContext = splitMessage[i];
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (msgContext.Length > 0)
+                            {
+                                embedBuilder.WithDescription(msgContext);
+                            }
+
+                            await reportChannel.SendMessageAsync("", false, embedBuilder.Build());
+                        }
+                    }
+                }
+            }
+
+#if false
             if (_guildChannelLookup.ContainsKey(guild.Id) && _guildChannelLookup[guild.Id].Contains(channel.Id))
             {
                 foreach (var role in msg.MentionedRoles)
@@ -294,6 +552,7 @@ namespace EconomyBot
                     }
                 }
             }
+#endif
         }
     }
 }

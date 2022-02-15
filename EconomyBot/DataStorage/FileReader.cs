@@ -45,6 +45,19 @@ namespace EconomyBot.DataStorage
         }
 
         /// <summary>
+        /// Write a JSON file and output the data passed as parameter.
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="fileData"></param>
+        internal static void WriteJson(string fileName, string fileData)
+        {
+            HandleFolderDirectories();
+            var path = CurrentDirectory + DatabasePath + "/" + fileName + ".json";
+
+            File.WriteAllText(path, fileData);
+        }
+
+        /// <summary>
         /// Read a JSON file and output the data contained
         /// </summary>
         /// <param name="fileName"></param>
@@ -114,5 +127,7 @@ namespace EconomyBot.DataStorage
             }
             return retVal;
         }
+
+        
     }
 }
