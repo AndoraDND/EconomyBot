@@ -13,7 +13,7 @@ namespace EconomyBot.Commands
         {
             if (DateTime.TryParse(input, out var time))
             {
-                var value = (long)time.ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                var value = (long)time.AddHours(6).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                 await ReplyAsync($"{Context.User.Mention} Timestamp for the supplied value is : ``{value}``");
             }
             else
