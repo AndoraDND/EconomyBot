@@ -324,6 +324,7 @@ namespace EconomyBot
                 }
             }
 
+            SaveGuildData();
 #if false
             if (_guildChannelLookup.TryGetValue(guild, out var watchList))
             {
@@ -482,12 +483,22 @@ namespace EconomyBot
                             }
                             else
                             {
-                                var splitMessage = msg.Content.Split(new char[] { '.', '?', '!' });
+                                var splitMessage = msg.Content.Replace("*", "").Replace("~", "").Replace("_", "").Replace("\n","").Split(new char[] { '.', '?', '!' });
                                 for(int i = splitMessage.Length-1; i >= 0; i--)
                                 {
                                     if(splitMessage[i] != null && splitMessage[i].Length > 0)
                                     {
-                                        msgContext = splitMessage[i];
+                                        var messageWithoutEmotes = splitMessage[i];
+                                        messageWithoutEmotes = RemoveEmotesFromString(messageWithoutEmotes);
+                                        
+                                        if (messageWithoutEmotes.Replace(" ", "").Replace($"<@&{role.Id}>", "").Length == 0)
+                                        {
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            msgContext = splitMessage[i];
+                                        }
                                         break;
                                     }
                                 }
@@ -553,6 +564,22 @@ namespace EconomyBot
                 }
             }
 #endif
+        }
+
+        public string RemoveEmotesFromString(string value)
+        {
+            if (value.Contains("<:"))
+            {
+                var retVal = value;
+                var startIndex = value.IndexOf("<:");
+                var endIndex = value.IndexOf(">");
+                var replaceStr = value.Substring(startIndex, endIndex);
+                return RemoveEmotesFromString(value.Replace(replaceStr, ""));
+            }
+            else
+            {
+                return value;
+            }
         }
     }
 }
