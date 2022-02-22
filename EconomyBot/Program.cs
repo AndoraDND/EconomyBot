@@ -82,6 +82,8 @@ namespace EconomyBot
             await _client.LoginAsync(TokenType.Bot, _credentials.Bot_Token);
             await _client.StartAsync();
 
+            _client.ThreadCreated += _client_ThreadCreated;
+
             DateTime timeNow;
             try
             {
@@ -103,6 +105,30 @@ namespace EconomyBot
                 //Update
                 await UpdateTask();
                 await Task.Delay(_updateTimer);
+            }
+        }
+
+        /// <summary>
+        /// Callback when a thread is created
+        /// </summary>
+        /// <param name="arg"></param>
+        /// <returns></returns>
+        private Task _client_ThreadCreated(SocketThreadChannel arg)
+        {
+            Task.Run(async () => await JoinThread(arg));
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Have the bot join a thread
+        /// </summary>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        private async Task JoinThread(SocketThreadChannel channel)
+        {
+            if (!channel.HasJoined)
+            {
+                await channel.JoinAsync();
             }
         }
 
