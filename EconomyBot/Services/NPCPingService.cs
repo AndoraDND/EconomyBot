@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -472,18 +473,19 @@ namespace EconomyBot
                             string msgContext = "";
                             if (msg.Content.Contains('('))
                             {
-                                if (msg.Content.Contains(')'))
+                                if (msg.Content.Contains(')') && msg.Content.Count(f => f == '(') <= 1)
                                 {
-                                    msgContext = msg.Content.Split('(', ')')[1];
+                                    var splitContent = msg.Content.Split('(', ')');
+                                    msgContext = splitContent[splitContent.Length - 2];
                                 }
                                 else
                                 {
-                                    msgContext = msg.Content.Substring(msg.Content.IndexOf('('));
+                                    msgContext = msg.Content.Substring(msg.Content.LastIndexOf('(')+1);
                                 }
                             }
                             else
                             {
-                                var splitMessage = msg.Content.Replace("*", "").Replace("~", "").Replace("_", "").Replace("\n","").Split(new char[] { '.', '?', '!' });
+                                var splitMessage = msg.Content.Replace("\"", "").Replace("\'", "").Replace("*", "").Replace("~", "").Replace("_", "").Replace("\n","").Split(new char[] { '.', '?', '!' });
                                 for(int i = splitMessage.Length-1; i >= 0; i--)
                                 {
                                     if(splitMessage[i] != null && splitMessage[i].Length > 0)
