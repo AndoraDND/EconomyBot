@@ -421,6 +421,8 @@ namespace EconomyBot.DataStorage
 
             var response = await client.PostAsync(Database_URI + api_stub, content);
 
+            Console.WriteLine($"Posting new character data. : {api_stub} - {json}");
+
             try
             {
                 response.EnsureSuccessStatusCode();
