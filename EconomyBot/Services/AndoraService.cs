@@ -181,6 +181,24 @@ namespace EconomyBot
         {
             var user = (SocketGuildUser)command.Data.Options.First().Value;
 
+            bool userIsSelf = command.User.Id.Equals(user.Id);
+
+            bool hasElevatedRole = false;
+            foreach (var role in ((SocketGuildUser)command.User).Roles)
+            {
+                if (ElevatedStatusRoles.Contains(role.Id))
+                {
+                    hasElevatedRole = true;
+                    break;
+                }
+            }
+
+            if (hasElevatedRole == false && userIsSelf == false)
+            {
+                await command.RespondAsync("You do not have permissions to use this command.");
+                return;
+            }
+
             var characterData = await CharacterDB.GetCharacterData(user.Id);
 
             var embedBuilder = new EmbedBuilder()
