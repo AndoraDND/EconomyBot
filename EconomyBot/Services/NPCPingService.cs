@@ -468,9 +468,12 @@ namespace EconomyBot
                             }
                             
                             embedBuilder.WithAuthor(new Discord.EmbedAuthorBuilder().WithName($"{msg.Author.Username}#{msg.Author.Discriminator}").WithIconUrl(msg.Author.GetAvatarUrl()));
+                            embedBuilder.AddField(new Discord.EmbedFieldBuilder().WithName("Channel").WithValue("#"+msg.Channel.Name));
                             embedBuilder.AddField(new Discord.EmbedFieldBuilder().WithName("Link").WithValue(msgLink));
 
                             string msgContext = "";
+                            msgContext = msg.Content;
+                            /*
                             if (msg.Content.Contains('('))
                             {
                                 if (msg.Content.Contains(')') && msg.Content.Count(f => f == '(') <= 1)
@@ -505,6 +508,7 @@ namespace EconomyBot
                                     }
                                 }
                             }
+                            */
 
                             if (msgContext.Length > 0)
                             {
