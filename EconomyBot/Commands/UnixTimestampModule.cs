@@ -13,7 +13,17 @@ namespace EconomyBot.Commands
         {
             if (DateTime.TryParse(input, out var time))
             {
-                var value = (long)time.AddHours(6).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                var utcTime = time;
+                try
+                {
+                    utcTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+                }
+                catch
+                {
+                    utcTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+                }
+
+                var value = ((DateTimeOffset)utcTime).ToUnixTimeSeconds(); // (long)time.AddHours(6).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
                 await ReplyAsync($"{Context.User.Mention} Timestamp for the supplied value is : ``{value}``");
             }
             else

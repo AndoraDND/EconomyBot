@@ -59,6 +59,8 @@ namespace EconomyBot
                     GatewayIntents.GuildMessageReactions
             });
             _client.Log += Log;
+            _client.Ready += Client_Ready;
+            _client.SlashCommandExecuted += SlashCommandHandler;
 
             _messageHandler = new MessageHandler();
             //_messageHandler.AddMessage("DTD has been reset for this week!", 934921635914481734, 934929339743625276, DateTime.Parse("02/06/2022 12:00:00"), TimeSpan.FromDays(7));
@@ -105,6 +107,50 @@ namespace EconomyBot
                 //Update
                 await UpdateTask();
                 await Task.Delay(_updateTimer);
+            }
+        }
+
+        private async Task Client_Ready()
+        {
+            var verifyCommand = new SlashCommandBuilder();
+            verifyCommand.WithName("verify");
+            verifyCommand.WithDescription("Verify a DTD request for a user.");
+            verifyCommand.AddOption("original-message", ApplicationCommandOptionType.String, "Link to the original message to verify.", true);
+            verifyCommand.AddOption("item-list", ApplicationCommandOptionType.String, "Verify the user owns a series of items.", false);
+
+            var charSheetCommand = new SlashCommandBuilder();
+            charSheetCommand.WithName("get-sheet");
+            charSheetCommand.WithDescription("Get a User's Character Sheet.");
+            charSheetCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
+            try
+            {
+                foreach (var guild in _client.Guilds)
+                {
+                    await guild.CreateApplicationCommandAsync(verifyCommand.Build());
+                    await guild.CreateApplicationCommandAsync(charSheetCommand.Build());
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        private async Task SlashCommandHandler(SocketSlashCommand command)
+        {
+            var andoraService = ((AndoraService)_services.GetService(typeof(AndoraService)));
+            switch (command.Data.Name)
+            {
+                case "verify":
+                {
+                    await andoraService.HandleVerifyCommand(command);
+                    break;
+                }
+                case "get-sheet":
+                {
+                    await andoraService.GetCharacterSheetCommand(command);
+                    break;
+                }
             }
         }
 

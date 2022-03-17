@@ -568,6 +568,11 @@ namespace EconomyBot
 #endif
         }
 
+        /// <summary>
+        /// Damn it Benny
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public string RemoveEmotesFromString(string value)
         {
             if (value.Contains("<:"))

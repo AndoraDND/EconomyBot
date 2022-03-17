@@ -168,6 +168,35 @@ namespace EconomyBot.DataStorage
             return false;
         }
 
+        /// <summary>
+        /// Return the relevant data regarding tool proficiencies.
+        /// </summary>
+        /// <param name="characterSheetURL"></param>
+        /// <returns></returns>
+        internal string GetToolProficiencies(string characterSheetURL)
+        {
+            var values = ParseRange(characterSheetURL, Range_ToolProficiency);
+
+            if (values != null && values.Count > 0)
+            {
+                var row = values[0];
+                if (row == null)
+                {
+                    return "";
+                }
+
+                var value = row[0];
+                if (value == null)
+                {
+                    return "";
+                }
+
+                return (string)value;
+            }
+
+            return "";
+        }
+
         internal string GetCurrency(string charSheetURL)
         {
             int gold = 0;
