@@ -102,7 +102,7 @@ namespace EconomyBot.DataStorage
             if(!backend_success)
             {
                 var sheetURLStub = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
-                var range = "'Player character sheet'!A2:P";
+                var range = "'Player character sheet'!A2:Q";
                 try
                 {
                     SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(sheetURLStub, range);
