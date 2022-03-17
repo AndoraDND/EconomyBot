@@ -51,6 +51,13 @@ namespace EconomyBot.DataStorage.AndoraDB.Json
         /// </summary>
         public string last_played { get; set; }
 
+        public int dtds { get; set; }
+
+        /// <summary>
+        /// Datetime of last earned experience. Stored in the format of a short date string (IE: "06-22-2021")
+        /// </summary>
+        public string last_exp_earned_date { get; set; }
+
         /// <summary>
         /// Google Sheets URL for the character's sheet. This should be stored as a Google API stub.
         /// </summary>
@@ -69,6 +76,8 @@ namespace EconomyBot.DataStorage.AndoraDB.Json
             retVal.level = data.Level;
             retVal.exp = data.Experience;
             retVal.last_played = $"{data.LastPlayed.Month.ToString("00")}-{data.LastPlayed.Day.ToString("00")}-{data.LastPlayed.Year}"; //Dumb, but whatever. Backend too picky.
+            retVal.last_exp_earned_date = $"{data.Last_Exp_Earned_Date.Month.ToString("00")}-{data.Last_Exp_Earned_Date.Day.ToString("00")}-{data.Last_Exp_Earned_Date.Year}";
+            retVal.dtds = data.DTD;
             retVal.sheet = data.AvraeURL;
 
             return retVal;

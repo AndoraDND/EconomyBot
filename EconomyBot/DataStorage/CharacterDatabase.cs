@@ -137,7 +137,9 @@ namespace EconomyBot.DataStorage
                             Experience = exp,
                             Level = level,
                             Class = ((string)sData[13]),
-                            LastPlayed = lastplayed
+                            LastPlayed = lastplayed,
+                            DTD = 0,
+                            Last_Exp_Earned_Date = lastplayed
                         };
 
                         _cachedCharacterData.Add(characterData);

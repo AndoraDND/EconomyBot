@@ -71,6 +71,11 @@ namespace EconomyBot.DataStorage
         public int DTD;
 
         /// <summary>
+        /// Date of last earned experience
+        /// </summary>
+        public DateTime Last_Exp_Earned_Date;
+
+        /// <summary>
         /// URL stub for Avrae-based character sheet
         /// </summary>
         public string AvraeURL;
@@ -88,7 +93,8 @@ namespace EconomyBot.DataStorage
             Level = json.level;
             Experience = json.exp;
             LastPlayed = DateTime.Parse(json.last_played);
-            DTD = 0;
+            DTD = json.dtds;
+            Last_Exp_Earned_Date = DateTime.Parse((json.last_exp_earned_date.Length > 0 ? json.last_exp_earned_date:json.last_played));
             AvraeURL = json.sheet;
         }
 
@@ -117,6 +123,8 @@ namespace EconomyBot.DataStorage
                 $"{indentSpace}Level: {Level},\n" +
                 $"{indentSpace}Experience: {Experience},\n" +
                 $"{indentSpace}LastPlayed: {LastPlayed},\n" +
+                $"{indentSpace}DTDs: {DTD},\n" +
+                $"{indentSpace}Last_Exp: {Last_Exp_Earned_Date},\n" +
                 $"{indentSpace}AvraeURL: {AvraeURL}";
             return retVal;
         }
