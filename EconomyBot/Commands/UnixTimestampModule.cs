@@ -16,11 +16,11 @@ namespace EconomyBot.Commands
                 var utcTime = time;
                 try
                 {
-                    utcTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
+                    utcTime = TimeZoneInfo.ConvertTimeToUtc(time, TimeZoneInfo.FindSystemTimeZoneById("America/Chicago"));
                 }
                 catch
                 {
-                    utcTime = TimeZoneInfo.ConvertTime(DateTime.Now, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
+                    utcTime = TimeZoneInfo.ConvertTimeToUtc(time, TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time"));
                 }
 
                 var value = ((DateTimeOffset)utcTime).ToUnixTimeSeconds(); // (long)time.AddHours(6).Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
