@@ -158,7 +158,9 @@ namespace EconomyBot
                 if (characterSheetURL == null)
                 {
                     //Couldn't find character sheet.
+                    throw new Exception("Failed to poll AvraeURL from Character Data");
                 }
+
                 var toolProficiencies = AvraeParser.GetToolProficiencies(characterSheetURL);
                 var currency = AvraeParser.GetCurrency(characterSheetURL);
 
@@ -173,39 +175,94 @@ namespace EconomyBot
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to execute verify command.");
+                Console.WriteLine($"Failed to execute verify command : {e.Message}");
             }
         }
 
         public async Task GetCharacterSheetCommand(SocketSlashCommand command)
         {
-            var user = (SocketGuildUser)command.Data.Options.First().Value;
-
-            bool userIsSelf = command.User.Id.Equals(user.Id);
-
-            bool hasElevatedRole = false;
-            foreach (var role in ((SocketGuildUser)command.User).Roles)
+            try
             {
-                if (ElevatedStatusRoles.Contains(role.Id))
+                var user = (SocketGuildUser)command.Data.Options.First().Value;
+
+                bool userIsSelf = command.User.Id.Equals(user.Id);
+
+                bool hasElevatedRole = false;
+                foreach (var role in ((SocketGuildUser)command.User).Roles)
                 {
-                    hasElevatedRole = true;
-                    break;
+                    if (ElevatedStatusRoles.Contains(role.Id))
+                    {
+                        hasElevatedRole = true;
+                        break;
+                    }
                 }
-            }
 
-            if (hasElevatedRole == false && userIsSelf == false)
+                if (hasElevatedRole == false && userIsSelf == false)
+                {
+                    await command.RespondAsync("You do not have permissions to use this command.");
+                    return;
+                }
+
+                var characterData = await CharacterDB.GetCharacterData(user.Id);
+
+                var embedBuilder = new EmbedBuilder()
+                        .WithTitle($"{(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}'s Character Sheet")
+                        .WithDescription("[Character Sheet Link](https://docs.google.com/spreadsheets/d/" + characterData.AvraeURL + ")");
+
+                await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: true);
+            }
+            catch (Exception e)
             {
-                await command.RespondAsync("You do not have permissions to use this command.");
-                return;
+                Console.WriteLine($"Failed to get Character Sheet : {e.Message}");
             }
+        }
 
-            var characterData = await CharacterDB.GetCharacterData(user.Id);
+        public async Task GetAppearanceCommand(SocketSlashCommand command)
+        {
+            try
+            {
+                var user = (SocketGuildUser)command.Data.Options.First().Value;
 
-            var embedBuilder = new EmbedBuilder()
-                    .WithTitle($"{(user.Nickname!=null?user.Nickname:user.Username + "#" + user.Discriminator)}'s Character Sheet")
-                    .WithDescription("[Character Sheet Link](https://docs.google.com/spreadsheets/d/" + characterData.AvraeURL+")");
+                bool hasElevatedRole = false;
+                foreach (var role in ((SocketGuildUser)command.User).Roles)
+                {
+                    if (ElevatedStatusRoles.Contains(role.Id))
+                    {
+                        hasElevatedRole = true;
+                        break;
+                    }
+                }
 
-            await command.RespondAsync(embed: embedBuilder.Build(), ephemeral:true);
+                await command.DeferAsync(true);// "Gathering character appearance data...");
+
+                var characterData = await CharacterDB.GetCharacterData(user.Id);
+                var characterSheetURL = characterData.AvraeURL;
+                if (characterSheetURL == null)
+                {
+                    //Couldn't find character sheet.
+                    throw new Exception("Failed to poll AvraeURL from Character Data");
+                }
+
+                var appearance = AvraeParser.GetCharacterAppearence(characterSheetURL);
+
+                var embedBuilder = new EmbedBuilder()
+                        .WithTitle($"{(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}'s Appearance")
+                        .WithFields(new EmbedFieldBuilder() { Name = "Age", Value = appearance.Age, IsInline = true }, 
+                        new EmbedFieldBuilder() { Name = "Height", Value = appearance.Height, IsInline = true },
+                        new EmbedFieldBuilder() { Name = "Weight", Value = appearance.Weight, IsInline = true },
+                        new EmbedFieldBuilder() { Name = "Size", Value = appearance.Size, IsInline = true },
+                        new EmbedFieldBuilder() { Name = "Gender", Value = appearance.Gender, IsInline = true }, 
+                        new EmbedFieldBuilder() { Name = "Eyes", Value = appearance.Eyes, IsInline = true },
+                        new EmbedFieldBuilder() { Name = "Hair", Value = appearance.Hair, IsInline = true },
+                        new EmbedFieldBuilder() { Name = "Skin", Value = appearance.Skin, IsInline = true }
+                        );
+                //new MessageProperties() { Embed = embedBuilder.Build() };
+                await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to poll character appearance data : {e.Message}");
+            }
         }
     }
 }

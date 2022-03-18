@@ -122,12 +122,19 @@ namespace EconomyBot
             charSheetCommand.WithName("get-sheet");
             charSheetCommand.WithDescription("Get a User's Character Sheet.");
             charSheetCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
+
+            var appearanceCommand = new SlashCommandBuilder();
+            appearanceCommand.WithName("appearance");
+            appearanceCommand.WithDescription("Get the Listed Appearance of a User's Character.");
+            appearanceCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
+
             try
             {
                 foreach (var guild in _client.Guilds)
                 {
                     await guild.CreateApplicationCommandAsync(verifyCommand.Build());
                     await guild.CreateApplicationCommandAsync(charSheetCommand.Build());
+                    await guild.CreateApplicationCommandAsync(appearanceCommand.Build());
                 }
             }
             catch (Exception e)
@@ -149,6 +156,11 @@ namespace EconomyBot
                 case "get-sheet":
                 {
                     await andoraService.GetCharacterSheetCommand(command);
+                    break;
+                }
+                case "appearance":
+                {
+                    await andoraService.GetAppearanceCommand(command);
                     break;
                 }
             }
