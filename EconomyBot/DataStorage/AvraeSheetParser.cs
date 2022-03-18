@@ -77,6 +77,16 @@ namespace EconomyBot.DataStorage
         private const string Range_InventoryColumn1 = "'Inventory'!I3:W76";
         private const string Range_InventoryColumn2 = "'Inventory'!Z3:AN76";
 
+        private const string Range_CharacterAppearance_Age = "'v2.1'!C148:E148";
+        private const string Range_CharacterAppearance_Height = "'v2.1'!F148:H148";
+        private const string Range_CharacterAppearance_Weight = "'v2.1'!I148:K148";
+        private const string Range_CharacterAppearance_Size = "'v2.1'!L148:N148";
+        private const string Range_CharacterAppearance_Gender = "'v2.1'!C150:E150";
+        private const string Range_CharacterAppearance_Eyes = "'v2.1'!F150:H150";
+        private const string Range_CharacterAppearance_Hair = "'v2.1'!I150:K150";
+        private const string Range_CharacterAppearance_Skin = "'v2.1'!L150:N150";
+
+
         public AvraeSheetParser(string googleCredentialsPath)
         {
             //Load Google Sheets credentials
@@ -246,6 +256,73 @@ namespace EconomyBot.DataStorage
             }
 
             return $"{gold}g{silver}s{copper}c";
+        }
+
+        internal AndoraDB.Json.CharacterAppearanceJson GetCharacterAppearence(string characterSheetURL)
+        {
+            var retVal = new AndoraDB.Json.CharacterAppearanceJson();
+
+            string[] AppearanceRanges = new string[] 
+            { 
+                Range_CharacterAppearance_Age, 
+                Range_CharacterAppearance_Height, 
+                Range_CharacterAppearance_Weight, 
+                Range_CharacterAppearance_Size, 
+                Range_CharacterAppearance_Gender, 
+                Range_CharacterAppearance_Eyes, 
+                Range_CharacterAppearance_Hair, 
+                Range_CharacterAppearance_Skin
+            };
+
+            for (int i = 0; i < AppearanceRanges.Length; i++)
+            {
+                string outputValue = "Undefined";
+
+                var values = ParseRange(characterSheetURL, AppearanceRanges[i]);
+
+                if (values != null && values.Count > 0)
+                {
+                    var row = values[0];
+                    if (row != null)
+                    {
+                        var value = row[0];
+                        if (value != null)
+                        {
+                            outputValue = (string)value;
+                        }
+                    }
+                }
+
+                switch(i)
+                {
+                    case 0:
+                        retVal.Age = outputValue;
+                        break;
+                    case 1:
+                        retVal.Height = outputValue;
+                        break;
+                    case 2:
+                        retVal.Weight = outputValue;
+                        break;
+                    case 3:
+                        retVal.Size = outputValue;
+                        break;
+                    case 4:
+                        retVal.Gender = outputValue;
+                        break;
+                    case 5:
+                        retVal.Eyes = outputValue;
+                        break;
+                    case 6:
+                        retVal.Hair = outputValue;
+                        break;
+                    case 7:
+                        retVal.Skin = outputValue;
+                        break;
+                }
+            }
+
+            return retVal;
         }
     }
 }
