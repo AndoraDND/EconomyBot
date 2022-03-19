@@ -109,6 +109,7 @@ namespace EconomyBot.DataStorage
             var ErrorHandlingPlayers = new List<Tuple<int, string, string>>();
 
             await Context.Guild.DownloadUsersAsync();
+            await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
             //Handle Game Report
             foreach(var report in GameReports)
@@ -121,7 +122,7 @@ namespace EconomyBot.DataStorage
                         string[] splitUser = player.playerName.Split('#');
                         Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
 
-                        var discordUser = Context.Client.GetUser(splitUser[0], splitUser[1]) as SocketGuildUser;//(await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
+                        var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
                         if (discordUser != null)
                         {
                             var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
