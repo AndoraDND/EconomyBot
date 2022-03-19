@@ -105,7 +105,7 @@ namespace EconomyBot.DataStorage
             var EventReports = GetUnprocessedEventReports();
 
             var TotalCalculatedRewards = new List<CombinedReward>();
-            var ErrorHandlingPlayers = new List<Tuple<string, int>>();
+            var ErrorHandlingPlayers = new List<Tuple<int, string, string>>();
 
             //Handle Game Report
             foreach(var report in GameReports)
@@ -136,12 +136,12 @@ namespace EconomyBot.DataStorage
                         }
                         else
                         {
-                            ErrorHandlingPlayers.Add(new Tuple<string, int>(player.playerName, report.RowID));
+                            ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, "Failed to find DiscordUser!"));
                         }
                     }
                     catch (Exception e)
                     {
-                        ErrorHandlingPlayers.Add(new Tuple<string, int>(player.playerName, report.RowID));
+                        ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, e.Message));
                         continue;
                     }
                 }
@@ -156,7 +156,7 @@ namespace EconomyBot.DataStorage
             output += "\nErrorLog:\n";
             foreach(var player in ErrorHandlingPlayers)
             {
-                output += $"[{player.Item2}] {player.Item1}\n";
+                output += $"[{player.Item1}] {player.Item2} - {player.Item3}\n";
                 //Console.WriteLine($"Failed to handle Player in ReportID[{player.Item2}]: {player.Item1}");
             }
 
