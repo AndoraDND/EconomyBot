@@ -24,7 +24,7 @@ namespace EconomyBot.Commands
         [Command("run", RunMode = RunMode.Async), Alias("r"), Summary("Run report for Post Reports and process experience")]
         public async Task HandleReportPollingCommandAsync()
         {
-            await _andoraService.PostReportParser.PollPlayerActivity();
+            await _andoraService.PostReportParser.PollPlayerActivity(Context);
         }
     }
 }

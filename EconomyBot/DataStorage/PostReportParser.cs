@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Discord.WebSocket;
@@ -52,7 +53,7 @@ namespace EconomyBot.DataStorage
             _andoraService = andoraService;
         }
 
-        public async Task PollPlayerActivity()
+        public async Task PollPlayerActivity(Discord.Commands.SocketCommandContext Context)
         {
             //await _client.DownloadUsersAsync(_client.Guilds); //yikes, testing only.
 
@@ -104,7 +105,7 @@ namespace EconomyBot.DataStorage
             var EventReports = GetUnprocessedEventReports();
 
             var TotalCalculatedRewards = new List<CombinedReward>();
-            var ErrorHandlingPlayers = new List<string>();
+            var ErrorHandlingPlayers = new List<Tuple<string, int>>();
 
             //Handle Game Report
             foreach(var report in GameReports)
@@ -135,18 +136,42 @@ namespace EconomyBot.DataStorage
                         }
                         else
                         {
-                            ErrorHandlingPlayers.Add($"{player.playerName} : Could not find user.");
+                            ErrorHandlingPlayers.Add(new Tuple<string, int>(player.playerName, report.RowID));
                         }
                     }
                     catch (Exception e)
                     {
-                        ErrorHandlingPlayers.Add($"{player.playerName} : {e.Message}");
+                        ErrorHandlingPlayers.Add(new Tuple<string, int>(player.playerName, report.RowID));
                         continue;
                     }
                 }
             }
 
+            var output = "RewardLog:\n";
+            foreach (var player in TotalCalculatedRewards)
+            {
+                output += $"{player.DiscordUser} [{player.LastPlayedDate}]: - {player.XPValue}\n";
+                //Console.WriteLine($"{player.DiscordUser} [{player.LastPlayedDate}]: - {player.XPValue}");
+            }
+            output += "\nErrorLog:\n";
+            foreach(var player in ErrorHandlingPlayers)
+            {
+                output += $"[{player.Item2}] {player.Item1}\n";
+                //Console.WriteLine($"Failed to handle Player in ReportID[{player.Item2}]: {player.Item1}");
+            }
 
+            //Output file for testing purposes.
+            if (output.Length < 1800)
+            {
+                await Context.Channel.SendMessageAsync($"{Context.User.Mention}\n" + output);
+            }
+            else
+            {
+                var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
+                File.WriteAllText(dumpFilePath, output);
+                await Context.Channel.SendFileAsync($"{Context.User.Mention}\n"+dumpFilePath);
+                File.Delete(dumpFilePath);
+            }
 
             Console.WriteLine("Finished processing reports");
         }
