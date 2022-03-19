@@ -108,8 +108,8 @@ namespace EconomyBot.DataStorage
             var TotalCalculatedRewards = new List<CombinedReward>();
             var ErrorHandlingPlayers = new List<Tuple<int, string, string>>();
 
-            await Context.Guild.DownloadUsersAsync();
-            await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
+            //await Context.Guild.DownloadUsersAsync();
+            //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
             //Handle Game Report
             foreach(var report in GameReports)
@@ -120,7 +120,7 @@ namespace EconomyBot.DataStorage
                     try
                     {
                         string[] splitUser = player.playerName.Split('#');
-                        Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
+                        //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
 
                         var discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                         //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);

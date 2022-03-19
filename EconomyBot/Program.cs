@@ -101,12 +101,27 @@ namespace EconomyBot
             nextSunday = nextSunday.AddHours(12);
             _lastWeeklyUpdate = DateTime.Parse(nextSunday.ToString());
             Console.WriteLine($"Next Weekly Refresh Time: {nextSunday.ToString()}");
-            
+
+            Console.WriteLine($"Downloading Guild Users...");
+            await Task.Run(async () => await DownloadGuildUsers());
+
             while (true)
             {
                 //Update
                 await UpdateTask();
                 await Task.Delay(_updateTimer);
+            }
+        }
+
+        /// <summary>
+        /// Download guild users prior to runtime of this bot.
+        /// </summary>
+        /// <returns></returns>
+        private async Task DownloadGuildUsers()
+        {
+            foreach (var guild in _client.Guilds)
+            {
+                await guild.DownloadUsersAsync();
             }
         }
 
