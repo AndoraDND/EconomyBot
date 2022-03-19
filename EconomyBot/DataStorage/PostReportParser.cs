@@ -108,6 +108,8 @@ namespace EconomyBot.DataStorage
             var TotalCalculatedRewards = new List<CombinedReward>();
             var ErrorHandlingPlayers = new List<Tuple<int, string, string>>();
 
+            await Context.Guild.DownloadUsersAsync();
+
             //Handle Game Report
             foreach(var report in GameReports)
             {
