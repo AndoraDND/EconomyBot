@@ -116,6 +116,7 @@ namespace EconomyBot.DataStorage
                     try
                     {
                         string[] splitUser = player.playerName.Split('#');
+                        Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
                         var discordUser = _client.GetUser(splitUser[0], splitUser[1]);
                         if (discordUser != null)
                         {
