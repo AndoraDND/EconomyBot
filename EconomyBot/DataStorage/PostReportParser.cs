@@ -332,7 +332,7 @@ namespace EconomyBot.DataStorage
 
                     if(((string)valueList[i][1]).Equals(reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator))
                     {
-                        index = i;
+                        index = i+6;
                         Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
                         break;
                     }
@@ -348,10 +348,9 @@ namespace EconomyBot.DataStorage
                 SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
 
-                
                 IList<IList<object>> updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
-                updatedValues[0].Add(int.Parse((string)valueList[index][0]) + reward.XPValue); //Exp
+                updatedValues[0].Add(int.Parse(((string)valueList[index][11])) + reward.XPValue); //Exp
 
                 string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
                 string range = $"'Player character sheet'!L{index}";
