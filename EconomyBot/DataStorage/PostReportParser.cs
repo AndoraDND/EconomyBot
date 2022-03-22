@@ -105,12 +105,12 @@ namespace EconomyBot.DataStorage
                         Discord.IUser discordUser = null;
                         if (Context.Guild.Users.Count > 0)
                         {
-                            discordUser = Context.Guild.Users.Where(p => Regex.Replace(p.Username, @"\p{C}+", string.Empty).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                            discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                         }
-
+                        
                         if(discordUser == null || discordUser == default(Discord.IUser))
                         {
-                            discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();
+                            //discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();
                         }
                         //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
                         if (discordUser != null)
@@ -164,12 +164,12 @@ namespace EconomyBot.DataStorage
                             Discord.IUser discordUser = null;
                             if (Context.Guild.Users.Count > 0)
                             {
-                                discordUser = Context.Guild.Users.Where(p => Regex.Replace(p.Username, @"\p{C}+", string.Empty).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                                discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length-2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                             }
 
                             if (discordUser == null || discordUser == default(Discord.IUser))
                             {
-                                discordUser = (await Context.Guild.SearchUsersAsync(player, 1)).First();
+                                //discordUser = (await Context.Guild.SearchUsersAsync(player, 1)).First();
                             }
                             //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
                             if (discordUser != null)
