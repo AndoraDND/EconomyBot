@@ -162,14 +162,23 @@ namespace EconomyBot.DataStorage
             ValueRange response = await request.ExecuteAsync();
             var charSheetValues = response.Values;
 
+            List<int> removeFlags = new List<int>();
+            int i = 0;
             foreach (var reward in TotalCalculatedRewards)
             {
                 //Update the player character sheet
                 if(await UpdateCharacterSheetWithReward(charSheetValues, reward) == false)
                 {
-                    TotalCalculatedRewards.Remove(reward);
+                    removeFlags.Add(i);
                     ErrorHandlingPlayers.Add(new Tuple<int, string, string>(reward.ReportID, reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator, "Failed Updating PlayerCharacterSheet. Check Logs."));
                 }
+                i++;
+            }
+
+            //Remove unhandled rewards
+            foreach(var value in removeFlags)
+            {
+                TotalCalculatedRewards.RemoveAt(value);
             }
 
             //Display output to the calling user.
