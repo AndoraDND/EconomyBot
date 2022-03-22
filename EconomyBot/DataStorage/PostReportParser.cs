@@ -56,51 +56,7 @@ namespace EconomyBot.DataStorage
 
         public async Task PollPlayerActivity(Discord.Commands.SocketCommandContext Context)
         {
-            //await _client.DownloadUsersAsync(_client.Guilds); //yikes, testing only.
-
-            /*
-            var GameReportData = GetReportSheetDB(0, $"'Post Game Reports (PGR)'!A34:I", 34);
-            //var EventReportData = GetReportSheetDB(1, $"'Post Event Reports (PER)'!A2:E", 2);
-            //var RumorReportData = GetReportSheetDB(2, $"'Post Rumor Reports (PRR)'!A2:D", 2);
-
-            var TrackedData = new Dictionary<string, Tuple<int, int, int>>();
-
-            foreach(var report in GameReportData)
-            {
-                var characterList = new List<string>();
-                for (int i = 3; i <= 8; i++)
-                {
-                    if (report.Count > i)
-                    {
-                        characterList.Add((string)report[i]);
-                    }
-                }
-
-                foreach(var character in characterList)
-                {
-                    if(character.Contains('#'))
-                    {
-                        var discordName = character.Split("#")[0];
-                        if (TrackedData.ContainsKey(discordName))
-                        {
-                            TrackedData[discordName] = new Tuple<int, int, int>(TrackedData[discordName].Item1 + 1,
-                                TrackedData[discordName].Item2,
-                                TrackedData[discordName].Item3);
-                        }
-                        else
-                        {
-                            TrackedData.Add(discordName, new Tuple<int, int, int>(1, 0, 0));
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine($"Output values: \n");
-            foreach (var character in TrackedData)
-            {
-                Console.WriteLine($"{character.Key} - < {character.Value.Item1} >");
-            }
-            */
+            await Context.Channel.SendMessageAsync("Starting report process. \nPlease note that this process may take some time and experience delays. \nDo not start another process while waiting.");
 
             var GameReports = GetUnprocessedGameReports();
             var EventReports = GetUnprocessedEventReports();
@@ -111,6 +67,7 @@ namespace EconomyBot.DataStorage
             //await Context.Guild.DownloadUsersAsync();
             //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
+            await Context.Channel.SendMessageAsync("Successfully polled new reports. Beginnning processing...");
             //Generate final output
             var output = "RewardLog:\n";
             output += "Handling Game Reports:\n";
@@ -173,6 +130,7 @@ namespace EconomyBot.DataStorage
                         ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, e.Message));
                         continue;
                     }
+                    await Task.Delay(1000);
                 }
             }
 
@@ -232,9 +190,12 @@ namespace EconomyBot.DataStorage
                             ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, e.Message));
                             continue;
                         }
+                        await Task.Delay(1000);
                     }
                 }
             }
+
+            await Context.Channel.SendMessageAsync("Successfully processed reports. Beginning reward allocation...");
 
             //Update Player Character Sheet with new Values.
             string range = "'Player character sheet'!A6:Q";
@@ -255,6 +216,7 @@ namespace EconomyBot.DataStorage
                     ErrorHandlingPlayers.Add(new Tuple<int, string, string>(reward.ReportID, reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator, "Failed Updating PlayerCharacterSheet. Check Logs."));
                 }
                 i++;
+                await Task.Delay(1000);
             }
 
             //Remove unhandled rewards
