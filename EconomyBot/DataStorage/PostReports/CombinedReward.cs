@@ -7,6 +7,7 @@ namespace EconomyBot.DataStorage
 {
     public class CombinedReward
     {
+        public int ReportID;
         public IUser DiscordUser;
         public DateTime LastPlayedDate;
         public int XPValue = 0;

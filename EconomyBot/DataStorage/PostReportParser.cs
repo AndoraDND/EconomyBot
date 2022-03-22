@@ -137,7 +137,7 @@ namespace EconomyBot.DataStorage
                             }
                             else
                             {
-                                var newReward = new CombinedReward() { DiscordUser = discordUser, LastPlayedDate = report.MissionRunDate, XPValue = player.playerExp };
+                                var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.MissionRunDate, XPValue = player.playerExp };
                                 TotalCalculatedRewards.Add(newReward);
                             }
                         }
@@ -154,6 +154,25 @@ namespace EconomyBot.DataStorage
                 }
             }
 
+            //Update Player Character Sheet with new Values.
+            string range = "'Player character sheet'!A3:Q";
+            string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
+
+            SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
+            ValueRange response = await request.ExecuteAsync();
+            var charSheetValues = response.Values;
+
+            foreach (var reward in TotalCalculatedRewards)
+            {
+                //Update the player character sheet
+                if(await UpdateCharacterSheetWithReward(charSheetValues, reward) == false)
+                {
+                    TotalCalculatedRewards.Remove(reward);
+                    ErrorHandlingPlayers.Add(new Tuple<int, string, string>(reward.ReportID, reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator, "Failed Updating PlayerCharacterSheet. Check Logs."));
+                }
+            }
+
+            //Display output to the calling user.
             var output = "RewardLog:\n";
             foreach (var player in TotalCalculatedRewards)
             {
@@ -274,6 +293,86 @@ namespace EconomyBot.DataStorage
             }
 
             return retVal;
+        }
+
+        public async Task<bool> UpdateCharacterSheetWithReward(IList<IList<object>> valueList, CombinedReward reward)
+        {
+            if (valueList == null && valueList.Count <= 0)
+            {
+                Console.WriteLine("Error updating character sheet : Value list is null or empty!");
+                return false;
+            }
+
+            try
+            {
+                int index = -1;
+                for(int i = 0; i < valueList.Count; i++)
+                {
+                    if(((string)valueList[i][1]).Equals(reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator))
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+                if(index == -1)
+                {
+                    //Failed to find user in list.
+                    Console.WriteLine($"Failed to find discord user in player character sheet : {reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}");
+                    return false;
+                }
+
+                SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
+                SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+
+                IList<IList<object>> updatedValues = new List<IList<object>>();
+                updatedValues.Add(new List<object>());
+                updatedValues[0].Add(int.Parse((string)valueList[index][0]) + reward.XPValue); //Exp
+
+                string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
+                string range = $"'Player character sheet'!L{index}";
+                SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
+                ValueRange expresponse = await request.ExecuteAsync();
+
+                request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
+                ValueRange playedresponse = await request.ExecuteAsync();
+
+                Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{(string)expresponse.Values[0][0]}] CurrLastPlayed[{(string)playedresponse.Values[0][0]}]");
+                Console.WriteLine($"        NewExp[{reward.XPValue}] NewLastPlayed[{reward.LastPlayedDate}]");
+                
+                /*
+                //Update EXP Column
+                ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
+                SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
+                    "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                    $"'Player character sheet'!L{index}");
+                request.ValueInputOption = valueInputOption;
+                request.InsertDataOption = insertDataOption;
+
+                AppendValuesResponse response = await request.ExecuteAsync();
+
+                updatedValues = new List<IList<object>>();
+                updatedValues.Add(new List<object>());
+                updatedValues[0].Add(reward.LastPlayedDate.ToShortDateString()); //Date last played
+
+                //Update LastPlayedColumn
+                requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
+                request = _service.Spreadsheets.Values.Append(requestBody,
+                    "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                    $"'Player character sheet'!P{index}");
+                request.ValueInputOption = valueInputOption;
+                request.InsertDataOption = insertDataOption;
+
+                response = await request.ExecuteAsync();
+                */
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to update character sheet : {e.Message}");
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
