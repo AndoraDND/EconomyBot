@@ -313,11 +313,12 @@ namespace EconomyBot.DataStorage
                 return false;
             }
 
+            /*
             Console.WriteLine($"Number of rows retrieved:{valueList.Count}");
             if(valueList.Count > 0)
             {
                 Console.WriteLine($"Number of columns retrieved: {valueList[0].Count}");
-            }
+            }*/
 
             try
             {
@@ -331,8 +332,8 @@ namespace EconomyBot.DataStorage
 
                     if(((string)valueList[i][1]).Equals(reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator))
                     {
-                        Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
                         index = i;
+                        Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
                         break;
                     }
                 }
