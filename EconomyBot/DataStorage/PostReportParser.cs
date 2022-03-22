@@ -361,14 +361,15 @@ namespace EconomyBot.DataStorage
 
                 SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
-
-                var newExp = int.Parse(((string)valueList[index][11])) + reward.XPValue;
-
-                IList<IList<object>> updatedValues = new List<IList<object>>();
-                updatedValues.Add(new List<object>());
-                updatedValues[0].Add(newExp); //Exp
                 
+                var currExp = int.Parse(((string)valueList[index][11]));
+                var newExp = currExp + reward.XPValue;
+                Console.WriteLine($"CurrentEXP: {currExp}\nNewExp: {newExp}");
 
+                //IList<IList<object>> updatedValues = new List<IList<object>>();
+                //updatedValues.Add(new List<object>());
+                //updatedValues[0].Add(newExp); //Exp
+                
                 string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
                 string range = $"'Player character sheet'!L{index}";
                 SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
