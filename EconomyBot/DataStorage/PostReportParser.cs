@@ -348,20 +348,24 @@ namespace EconomyBot.DataStorage
                 SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
 
+                var newExp = int.Parse(((string)valueList[index][11])) + reward.XPValue;
+
                 IList<IList<object>> updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
-                updatedValues[0].Add(int.Parse(((string)valueList[index][11])) + reward.XPValue); //Exp
+                updatedValues[0].Add(newExp); //Exp
+                
 
                 string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
                 string range = $"'Player character sheet'!L{index}";
                 SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
                 ValueRange expresponse = await request.ExecuteAsync();
 
+                range = $"'Player character sheet'!P{index}";
                 request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
                 ValueRange playedresponse = await request.ExecuteAsync();
 
                 Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{(string)expresponse.Values[0][0]}] CurrLastPlayed[{(string)playedresponse.Values[0][0]}]");
-                Console.WriteLine($"        NewExp[{reward.XPValue}] NewLastPlayed[{reward.LastPlayedDate}]");
+                Console.WriteLine($"        NewExp[{newExp}] NewLastPlayed[{reward.LastPlayedDate}]");
                 
                 /*
                 //Update EXP Column
