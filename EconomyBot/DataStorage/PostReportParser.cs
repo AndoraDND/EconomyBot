@@ -482,7 +482,7 @@ namespace EconomyBot.DataStorage
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE"); 
 
-            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Range = $"'Post Game Reports (PGR)'!P{report.RowID}", Values = updatedValues };
+            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues }; //Range = $"'Post Game Reports (PGR)'!P{report.RowID}",
             SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
                 SheetURLStub,
                 $"'Post Game Reports (PGR)'!P{report.RowID}");
@@ -501,7 +501,7 @@ namespace EconomyBot.DataStorage
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE");
 
-            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Range = $"'Post Event Reports (PER)'!P{report.RowID}", Values = updatedValues };
+            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues }; //Range = $"'Post Event Reports (PER)'!P{report.RowID}",
             SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
                 SheetURLStub,
                 $"'Post Event Reports (PER)'!P{report.RowID}");
