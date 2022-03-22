@@ -212,7 +212,7 @@ namespace EconomyBot.DataStorage
                                 }
                                 else
                                 {
-                                    var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.MissionRunDate, XPValue = player.playerExp };
+                                    var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.TimeStamp, XPValue = report.XPAwarded };
                                     TotalCalculatedRewards.Add(newReward);
                                 }
                             }
@@ -492,7 +492,7 @@ namespace EconomyBot.DataStorage
             return true;
         }
 
-        private async Task SetGameReportProcessed(PostEventReport report)
+        private async Task SetGameReportProcessed(PostGameReport report)
         {
             SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
             SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
