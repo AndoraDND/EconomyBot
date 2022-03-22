@@ -71,6 +71,7 @@ namespace EconomyBot.DataStorage
             
             //Testing the user issue.
             string userList = "";
+            userList += $"{Context.Guild.Name}[{Context.Guild.Id}] - User Count[{Context.Guild.Users.Count}]";
             foreach(var user in Context.Guild.Users)
             {
                 userList += user.ToString();
