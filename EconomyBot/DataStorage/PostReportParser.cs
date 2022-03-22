@@ -127,7 +127,7 @@ namespace EconomyBot.DataStorage
                     }
                     catch (Exception e)
                     {
-                        ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, e.Message));
+                        ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, e.Message + "\n" + e.StackTrace));
                         continue;
                     }
                     await Task.Delay(1000);
@@ -187,7 +187,7 @@ namespace EconomyBot.DataStorage
                         }
                         catch (Exception e)
                         {
-                            ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, e.Message));
+                            ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, e.Message + "\n" + e.StackTrace));
                             continue;
                         }
                         await Task.Delay(1000);
@@ -205,6 +205,8 @@ namespace EconomyBot.DataStorage
             ValueRange response = await request.ExecuteAsync();
             var charSheetValues = response.Values;
 
+            await Task.Delay(60000 - (DateTime.Now.Second * 1000)); // :(
+
             List<int> removeFlags = new List<int>();
             int i = 0;
             foreach (var reward in TotalCalculatedRewards)
@@ -213,7 +215,9 @@ namespace EconomyBot.DataStorage
                 if(await UpdateCharacterSheetWithReward(charSheetValues, reward) == false)
                 {
                     removeFlags.Add(i);
-                    ErrorHandlingPlayers.Add(new Tuple<int, string, string>(reward.ReportID, reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator, "Failed Updating PlayerCharacterSheet. Check Logs."));
+                    ErrorHandlingPlayers.Add(new Tuple<int, string, string>(reward.ReportID, 
+                        reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator, 
+                        "Failed Updating PlayerCharacterSheet. Check Logs."));
                 }
                 i++;
                 await Task.Delay(1000);
@@ -365,7 +369,9 @@ namespace EconomyBot.DataStorage
         {
             if (valueList == null && valueList.Count <= 0)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Error updating character sheet : Value list is null or empty!");
+                Console.ForegroundColor = ConsoleColor.White;
                 return false;
             }
 
@@ -408,20 +414,26 @@ namespace EconomyBot.DataStorage
                 var newExp = currExp + reward.XPValue;
                 Console.WriteLine($"CurrentEXP: {currExp}\nNewExp: {newExp}");
 
+                var currLastPlayed = (string)valueList[index - 6][15];
+
                 //IList<IList<object>> updatedValues = new List<IList<object>>();
                 //updatedValues.Add(new List<object>());
                 //updatedValues[0].Add(newExp); //Exp
-                
+
+                //temporary calls
+                /*
                 string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
                 string range = $"'Player character sheet'!L{index}";
                 SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
                 ValueRange expresponse = await request.ExecuteAsync();
+                
 
-                range = $"'Player character sheet'!P{index}";
-                request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
+                string range = $"'Player character sheet'!P{index}";
+                SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
                 ValueRange playedresponse = await request.ExecuteAsync();
+                */
 
-                Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{(string)expresponse.Values[0][0]}] CurrLastPlayed[{(string)playedresponse.Values[0][0]}]");
+                Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{currExp}] CurrLastPlayed[{currLastPlayed}]");
                 Console.WriteLine($"        NewExp[{newExp}] NewLastPlayed[{reward.LastPlayedDate}]");
                 
                 /*
@@ -452,7 +464,9 @@ namespace EconomyBot.DataStorage
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Failed to update character sheet : {e.Message}");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Failed to update character sheet : {e.Message}\n{e.StackTrace}");
+                Console.ForegroundColor = ConsoleColor.White;
                 return false;
             }
 
