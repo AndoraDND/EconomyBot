@@ -362,7 +362,7 @@ namespace EconomyBot.DataStorage
                 SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
                 
-                var currExp = int.Parse(((string)valueList[index][11]));
+                var currExp = int.Parse(((string)valueList[index-6][11]));
                 var newExp = currExp + reward.XPValue;
                 Console.WriteLine($"CurrentEXP: {currExp}\nNewExp: {newExp}");
 
