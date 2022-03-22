@@ -318,8 +318,14 @@ namespace EconomyBot.DataStorage
                 int index = -1;
                 for(int i = 0; i < valueList.Count; i++)
                 {
+                    if(valueList.Count <= 0 || valueList[0].Count <= 0)
+                    {
+                        continue;
+                    }
+
                     if(((string)valueList[i][1]).Equals(reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator))
                     {
+                        Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
                         index = i;
                         break;
                     }
@@ -335,6 +341,7 @@ namespace EconomyBot.DataStorage
                 SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
                 SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
 
+                
                 IList<IList<object>> updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
                 updatedValues[0].Add(int.Parse((string)valueList[index][0]) + reward.XPValue); //Exp
