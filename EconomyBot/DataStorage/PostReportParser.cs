@@ -111,9 +111,13 @@ namespace EconomyBot.DataStorage
             //await Context.Guild.DownloadUsersAsync();
             //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
+            //Generate final output
+            var output = "RewardLog:\n";
+            output += "Handling Game Reports:\n";
             //Handle Game Report
-            foreach(var report in GameReports)
+            foreach (var report in GameReports)
             {
+                output += $"RowID: {report.RowID}\n";
                 var rewardData = JsonConvert.DeserializeObject<List<JSONRewardData>>(report.JSON);
                 foreach (var player in rewardData)
                 {
@@ -172,8 +176,10 @@ namespace EconomyBot.DataStorage
                 }
             }
 
+            output += "Handling Event Reports:\n";
             foreach (var report in EventReports)
             {
+                output += $"RowID: {report.RowID}\n";
                 if (report.XPAwarded > 0)
                 {
                     foreach (var player in report.Participants)
@@ -260,16 +266,15 @@ namespace EconomyBot.DataStorage
 
             foreach(var report in GameReports)
             {
-                SetGameReportProcessed(report);
+                await SetGameReportProcessed(report);
             }
 
             foreach(var report in EventReports)
             {
-                SetEventReportProcessed(report);
+                await SetEventReportProcessed(report);
             }
 
             //Display output to the calling user.
-            var output = "RewardLog:\n";
             foreach (var player in TotalCalculatedRewards)
             {
                 output += $"{player.DiscordUser} [{player.LastPlayedDate}]: - {player.XPValue}\n";
@@ -291,7 +296,7 @@ namespace EconomyBot.DataStorage
             {
                 var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
                 File.WriteAllText(dumpFilePath, output);
-                await Context.Channel.SendFileAsync($"{Context.User.Mention}\n"+dumpFilePath);
+                await Context.Channel.SendFileAsync(dumpFilePath, $"{Context.User.Mention}");
                 File.Delete(dumpFilePath);
             }
 
@@ -495,13 +500,13 @@ namespace EconomyBot.DataStorage
         private async Task SetGameReportProcessed(PostGameReport report)
         {
             SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.OVERWRITE;
 
             IList<IList<object>> updatedValues = new List<IList<object>>();
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE"); 
 
-            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
+            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Range = $"'Post Game Reports (PGR)'!P{report.RowID}", Values = updatedValues };
             SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
                 SheetURLStub,
                 $"'Post Game Reports (PGR)'!P{report.RowID}");
@@ -514,13 +519,13 @@ namespace EconomyBot.DataStorage
         private async Task SetEventReportProcessed(PostEventReport report)
         {
             SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.OVERWRITE;
 
             IList<IList<object>> updatedValues = new List<IList<object>>();
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE");
 
-            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
+            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Range = $"'Post Event Reports (PER)'!P{report.RowID}", Values = updatedValues };
             SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
                 SheetURLStub,
                 $"'Post Event Reports (PER)'!P{report.RowID}");
