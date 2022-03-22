@@ -176,7 +176,6 @@ namespace EconomyBot.DataStorage
                                 foreach (var user in Context.Guild.Users)
                                 {
                                     string username = user.Username;
-                                    Console.WriteLine($"Checking user: {username}");
                                     if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
                                     {
                                         discordUser = user;
@@ -510,7 +509,7 @@ namespace EconomyBot.DataStorage
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE"); 
 
-            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues }; //Range = $"'Post Game Reports (PGR)'!P{report.RowID}",
+            ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues }; //Range = $"'Post Game Reports (PGR)'!P{report.RowID}",
             SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
                 SheetURLStub,
                 $"'Post Game Reports (PGR)'!P{report.RowID}");
@@ -529,7 +528,7 @@ namespace EconomyBot.DataStorage
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE");
 
-            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues }; //Range = $"'Post Event Reports (PER)'!P{report.RowID}",
+            ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues }; //Range = $"'Post Event Reports (PER)'!P{report.RowID}",
             SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
                 SheetURLStub,
                 $"'Post Event Reports (PER)'!P{report.RowID}");
