@@ -122,8 +122,18 @@ namespace EconomyBot.DataStorage
                         string[] splitUser = player.playerName.Split('#');
                         //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
 
-                        Discord.IUser discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).First();
-                        if(discordUser == null)
+                        Discord.IUser discordUser = null;
+                        if(Context.Guild.Users.Count <= 0)
+                        {
+                            //Why is this still an issue.
+                            await Context.Guild.DownloadUsersAsync();
+                        }
+                        if (Context.Guild.Users.Count > 0)
+                        {
+                            discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                        }
+
+                        if(discordUser == null || discordUser == default(Discord.IUser))
                         {
                             discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();
                         }
