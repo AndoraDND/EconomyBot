@@ -155,7 +155,7 @@ namespace EconomyBot.DataStorage
             }
 
             //Update Player Character Sheet with new Values.
-            string range = "'Player character sheet'!A3:Q";
+            string range = "'Player character sheet'!A6:Q";
             string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
 
             SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
@@ -311,6 +311,12 @@ namespace EconomyBot.DataStorage
             {
                 Console.WriteLine("Error updating character sheet : Value list is null or empty!");
                 return false;
+            }
+
+            Console.WriteLine($"Number of rows retrieved:{valueList.Count}");
+            if(valueList.Count > 0)
+            {
+                Console.WriteLine($"Number of columns retrieved: {valueList[0].Count}");
             }
 
             try
