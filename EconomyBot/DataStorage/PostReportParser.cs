@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using Google.Apis.Auth.OAuth2;
@@ -70,6 +71,7 @@ namespace EconomyBot.DataStorage
             await Context.Channel.SendMessageAsync("Successfully polled new reports. Beginnning processing...");
 
             await Context.Guild.DownloadUsersAsync();
+            /*
             //Testing the user issue.
             string userList = "";
             userList += $"{Context.Guild.Name}[{Context.Guild.Id}] - User Count[{Context.Guild.Users.Count}]\n";
@@ -83,6 +85,7 @@ namespace EconomyBot.DataStorage
             File.Delete(dumpPath);
 
             return;
+            */
 
             //Generate final output
             var output = "RewardLog:\n";
@@ -100,14 +103,9 @@ namespace EconomyBot.DataStorage
                         //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
 
                         Discord.IUser discordUser = null;
-                        if(Context.Guild.Users.Count <= 0)
-                        {
-                            //Why is this still an issue.
-                            await Context.Guild.DownloadUsersAsync();
-                        }
                         if (Context.Guild.Users.Count > 0)
                         {
-                            discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                            discordUser = Context.Guild.Users.Where(p => Regex.Replace(p.Username, @"\p{C}+", string.Empty).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                         }
 
                         if(discordUser == null || discordUser == default(Discord.IUser))
@@ -164,14 +162,9 @@ namespace EconomyBot.DataStorage
                             //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
 
                             Discord.IUser discordUser = null;
-                            if (Context.Guild.Users.Count <= 0)
-                            {
-                                //Why is this still an issue.
-                                await Context.Guild.DownloadUsersAsync();
-                            }
                             if (Context.Guild.Users.Count > 0)
                             {
-                                discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                                discordUser = Context.Guild.Users.Where(p => Regex.Replace(p.Username, @"\p{C}+", string.Empty).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                             }
 
                             if (discordUser == null || discordUser == default(Discord.IUser))
