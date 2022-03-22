@@ -176,7 +176,7 @@ namespace EconomyBot.DataStorage
             }
 
             //Remove unhandled rewards
-            foreach(var value in removeFlags)
+            foreach(var value in removeFlags.Reverse())
             {
                 TotalCalculatedRewards.RemoveAt(value);
             }
