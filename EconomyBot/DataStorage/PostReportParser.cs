@@ -105,7 +105,16 @@ namespace EconomyBot.DataStorage
                         Discord.IUser discordUser = null;
                         if (Context.Guild.Users.Count > 0)
                         {
-                            discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                            foreach(var user in Context.Guild.Users)
+                            {
+                                string username = user.Username;
+                                if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
+                                {
+                                    discordUser = user;
+                                    break;
+                                }
+                            }
+                            //discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                         }
                         
                         if(discordUser == null || discordUser == default(Discord.IUser))
@@ -164,7 +173,17 @@ namespace EconomyBot.DataStorage
                             Discord.IUser discordUser = null;
                             if (Context.Guild.Users.Count > 0)
                             {
-                                discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length-2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                                foreach (var user in Context.Guild.Users)
+                                {
+                                    string username = user.Username;
+                                    Console.WriteLine($"Checking user: {username}");
+                                    if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
+                                    {
+                                        discordUser = user;
+                                        break;
+                                    }
+                                }
+                                //discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
                             }
 
                             if (discordUser == null || discordUser == default(Discord.IUser))
