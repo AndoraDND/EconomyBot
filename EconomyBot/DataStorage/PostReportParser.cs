@@ -148,6 +148,10 @@ namespace EconomyBot.DataStorage
                                 {
                                     TotalCalculatedRewards[index].LastPlayedDate = report.MissionRunDate;
                                 }
+                                if(TotalCalculatedRewards[index].LastExpDate < report.MissionRunDate)
+                                {
+                                    TotalCalculatedRewards[index].LastExpDate = report.MissionRunDate;
+                                }
                             }
                             else
                             {
@@ -164,6 +168,64 @@ namespace EconomyBot.DataStorage
                     {
                         ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, e.Message));
                         continue;
+                    }
+                }
+            }
+
+            foreach (var report in EventReports)
+            {
+                if (report.XPAwarded > 0)
+                {
+                    foreach (var player in report.Participants)
+                    {
+                        try
+                        {
+                            string[] splitUser = player.Split('#');
+                            //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
+
+                            Discord.IUser discordUser = null;
+                            if (Context.Guild.Users.Count <= 0)
+                            {
+                                //Why is this still an issue.
+                                await Context.Guild.DownloadUsersAsync();
+                            }
+                            if (Context.Guild.Users.Count > 0)
+                            {
+                                discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                            }
+
+                            if (discordUser == null || discordUser == default(Discord.IUser))
+                            {
+                                discordUser = (await Context.Guild.SearchUsersAsync(player, 1)).First();
+                            }
+                            //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
+                            if (discordUser != null)
+                            {
+                                var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
+                                if (index >= 0)
+                                {
+                                    TotalCalculatedRewards[index].XPValue += report.XPAwarded;
+                                    if (TotalCalculatedRewards[index].LastExpDate < report.TimeStamp)
+                                    {
+                                        TotalCalculatedRewards[index].LastExpDate = report.TimeStamp;
+                                    }
+                                }
+                                else
+                                {
+                                    var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.MissionRunDate, XPValue = player.playerExp };
+                                    TotalCalculatedRewards.Add(newReward);
+                                }
+                            }
+                            else
+                            {
+                                ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, "Failed to find DiscordUser!"));
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, e.Message));
+                            continue;
+                        }
                     }
                 }
             }
@@ -194,6 +256,16 @@ namespace EconomyBot.DataStorage
             foreach (var value in removeFlags)
             {
                 TotalCalculatedRewards.RemoveAt(value);
+            }
+
+            foreach(var report in GameReports)
+            {
+                SetGameReportProcessed(report);
+            }
+
+            foreach(var report in EventReports)
+            {
+                SetEventReportProcessed(report);
             }
 
             //Display output to the calling user.
@@ -234,28 +306,31 @@ namespace EconomyBot.DataStorage
             int rowID = 64;
             foreach(var row in values)
             {
-                var report = new PostGameReport(rowID);
                 try
                 {
-                    DateTime.TryParse((string)row[0], out report.TimeStamp);
-                    report.DMName = (string)row[1];
-                    DateTime.TryParse((string)row[2], out report.MissionRunDate);
-                    report.Players = new List<string>();
-                    for (int i = 3; i <= 8; i++)
+                    if (row[15] != null && !((string)row[15]).Equals("TRUE"))
                     {
-                        if (((string)row[i]) != null && ((string)row[i]).Length > 0)
+                        var report = new PostGameReport(rowID);
+                        DateTime.TryParse((string)row[0], out report.TimeStamp);
+                        report.DMName = (string)row[1];
+                        DateTime.TryParse((string)row[2], out report.MissionRunDate);
+                        report.Players = new List<string>();
+                        for (int i = 3; i <= 8; i++)
                         {
-                            report.Players.Add((string)row[i]);
+                            if (((string)row[i]) != null && ((string)row[i]).Length > 0)
+                            {
+                                report.Players.Add((string)row[i]);
+                            }
                         }
-                    }
-                    report.ItemResults = (string)row[9];
-                    report.StoryDevelopments = (string)row[10];
-                    report.MainStoryRelated = ((string)row[11]).ToLower().Contains('y');
-                    report.WeeklyRumorBoard = (string)row[12];
-                    report.SessionSpecifics = (string)row[13];
-                    report.JSON = (string)row[14];
+                        report.ItemResults = (string)row[9];
+                        report.StoryDevelopments = (string)row[10];
+                        report.MainStoryRelated = ((string)row[11]).ToLower().Contains('y');
+                        report.WeeklyRumorBoard = (string)row[12];
+                        report.SessionSpecifics = (string)row[13];
+                        report.JSON = (string)row[14];
 
-                    retVal.Add(report);
+                        retVal.Add(report);
+                    }
                 }
                 catch(Exception e)
                 {
@@ -277,11 +352,11 @@ namespace EconomyBot.DataStorage
             int rowID = 25;
             foreach (var row in values)
             {
-                var report = new PostEventReport(rowID);
                 try
                 {
                     if (row[15] != null && !((string)row[15]).Equals("TRUE")) //Make sure the row isn't already processed.
                     {
+                        var report = new PostEventReport(rowID);
                         DateTime.TryParse((string)row[0], out report.TimeStamp);
                         report.MainRunner = (string)row[1];
                         report.OtherRunners = new List<string>();
@@ -415,6 +490,44 @@ namespace EconomyBot.DataStorage
             }
 
             return true;
+        }
+
+        private async Task SetGameReportProcessed(PostEventReport report)
+        {
+            SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
+            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+
+            IList<IList<object>> updatedValues = new List<IList<object>>();
+            updatedValues.Add(new List<object>());
+            updatedValues[0].Add("TRUE"); 
+
+            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
+            SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
+                SheetURLStub,
+                $"'Post Game Reports (PGR)'!P{report.RowID}");
+            request.ValueInputOption = valueInputOption;
+            request.InsertDataOption = insertDataOption;
+
+            AppendValuesResponse response = await request.ExecuteAsync();
+        }
+
+        private async Task SetEventReportProcessed(PostEventReport report)
+        {
+            SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
+            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+
+            IList<IList<object>> updatedValues = new List<IList<object>>();
+            updatedValues.Add(new List<object>());
+            updatedValues[0].Add("TRUE");
+
+            ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
+            SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
+                SheetURLStub,
+                $"'Post Event Reports (PER)'!P{report.RowID}");
+            request.ValueInputOption = valueInputOption;
+            request.InsertDataOption = insertDataOption;
+
+            AppendValuesResponse response = await request.ExecuteAsync();
         }
 
         /// <summary>
