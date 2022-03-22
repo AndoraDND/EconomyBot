@@ -68,13 +68,14 @@ namespace EconomyBot.DataStorage
             //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
             await Context.Channel.SendMessageAsync("Successfully polled new reports. Beginnning processing...");
-            
+
+            await Context.Guild.DownloadUsersAsync();
             //Testing the user issue.
             string userList = "";
-            userList += $"{Context.Guild.Name}[{Context.Guild.Id}] - User Count[{Context.Guild.Users.Count}]";
+            userList += $"{Context.Guild.Name}[{Context.Guild.Id}] - User Count[{Context.Guild.Users.Count}]\n";
             foreach(var user in Context.Guild.Users)
             {
-                userList += user.ToString();
+                userList += user.ToString() + "\n";
             }
             var dumpPath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
             File.WriteAllText(dumpPath, userList);
