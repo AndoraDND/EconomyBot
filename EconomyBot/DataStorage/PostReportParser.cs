@@ -76,10 +76,10 @@ namespace EconomyBot.DataStorage
             {
                 userList += user.ToString();
             }
-            var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
-            File.WriteAllText(dumpFilePath, userList);
-            await Context.Channel.SendFileAsync(dumpFilePath, "Hey, since I'm a dumb bot, here's that list of users I'm failing to find anything on:");
-            File.Delete(dumpFilePath);
+            var dumpPath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
+            File.WriteAllText(dumpPath, userList);
+            await Context.Channel.SendFileAsync(dumpPath, "Hey, since I'm a dumb bot, here's that list of users I'm failing to find anything on:");
+            File.Delete(dumpPath);
 
             return;
 
