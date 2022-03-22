@@ -502,40 +502,40 @@ namespace EconomyBot.DataStorage
 
         private async Task SetGameReportProcessed(PostGameReport report)
         {
-            SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.OVERWRITE;
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ResponseValueRenderOptionEnum responseRenderOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ResponseValueRenderOptionEnum.FORMATTEDVALUE;
 
             IList<IList<object>> updatedValues = new List<IList<object>>();
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE"); 
 
             ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues }; //Range = $"'Post Game Reports (PGR)'!P{report.RowID}",
-            SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
+            SpreadsheetsResource.ValuesResource.UpdateRequest request = _service.Spreadsheets.Values.Update(requestBody,
                 SheetURLStub,
                 $"'Post Game Reports (PGR)'!P{report.RowID}");
             request.ValueInputOption = valueInputOption;
-            request.InsertDataOption = insertDataOption;
+            request.ResponseValueRenderOption = responseRenderOption;
 
-            AppendValuesResponse response = await request.ExecuteAsync();
+            UpdateValuesResponse response = await request.ExecuteAsync();
         }
 
         private async Task SetEventReportProcessed(PostEventReport report)
         {
-            SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-            SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.OVERWRITE;
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+            SpreadsheetsResource.ValuesResource.UpdateRequest.ResponseValueRenderOptionEnum responseRenderOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ResponseValueRenderOptionEnum.FORMATTEDVALUE;
 
             IList<IList<object>> updatedValues = new List<IList<object>>();
             updatedValues.Add(new List<object>());
             updatedValues[0].Add("TRUE");
 
             ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues }; //Range = $"'Post Event Reports (PER)'!P{report.RowID}",
-            SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
+            SpreadsheetsResource.ValuesResource.UpdateRequest request = _service.Spreadsheets.Values.Update(requestBody,
                 SheetURLStub,
                 $"'Post Event Reports (PER)'!P{report.RowID}");
             request.ValueInputOption = valueInputOption;
-            request.InsertDataOption = insertDataOption;
+            request.ResponseValueRenderOption = responseRenderOption;
 
-            AppendValuesResponse response = await request.ExecuteAsync();
+            UpdateValuesResponse response = await request.ExecuteAsync();
         }
 
         /// <summary>
