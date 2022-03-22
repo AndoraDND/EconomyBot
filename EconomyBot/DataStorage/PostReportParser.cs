@@ -57,10 +57,16 @@ namespace EconomyBot.DataStorage
 
         public async Task PollPlayerActivity(Discord.Commands.SocketCommandContext Context)
         {
-            await Context.Channel.SendMessageAsync("Starting report process. \nPlease note that this process may take some time and experience delays. \nDo not start another process while waiting.");
+            await Context.Channel.SendMessageAsync("**Starting report process.** \n*Please note that this process may take some time and you may experience significant delays.*\nDo not start another process while waiting.");
 
             var GameReports = GetUnprocessedGameReports();
             var EventReports = GetUnprocessedEventReports();
+
+            if(GameReports.Count <= 0 && EventReports.Count <= 0)
+            {
+                await Context.Channel.SendMessageAsync("**Finished.**\n*No pending reports to process!*");
+                return;
+            }
 
             var TotalCalculatedRewards = new List<CombinedReward>();
             var ErrorHandlingPlayers = new List<Tuple<int, string, string>>();
@@ -68,7 +74,7 @@ namespace EconomyBot.DataStorage
             //await Context.Guild.DownloadUsersAsync();
             //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
-            await Context.Channel.SendMessageAsync("Successfully polled new reports. Beginnning processing...");
+            await Context.Channel.SendMessageAsync("Successfully polled new reports. *Beginnning processing...*");
 
             await Context.Guild.DownloadUsersAsync();
             /*
@@ -222,7 +228,7 @@ namespace EconomyBot.DataStorage
                 }
             }
 
-            await Context.Channel.SendMessageAsync("Successfully processed reports. Beginning reward allocation...");
+            await Context.Channel.SendMessageAsync("Successfully processed reports. *Beginning reward allocation...*");
 
             //Update Player Character Sheet with new Values.
             string range = "'Player character sheet'!A6:Q";
@@ -293,7 +299,7 @@ namespace EconomyBot.DataStorage
                 File.Delete(dumpFilePath);
             }
 
-            Console.WriteLine("Finished processing reports");
+            //Console.WriteLine("Finished processing reports");
         }
 
         public List<PostGameReport> GetUnprocessedGameReports()
@@ -434,60 +440,45 @@ namespace EconomyBot.DataStorage
                     return false;
                 }
 
-                SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-                SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum insertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
+                SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 
                 var currExp = int.Parse(((string)valueList[index-6][11]));
                 var newExp = currExp + reward.XPValue;
-                Console.WriteLine($"CurrentEXP: {currExp}\nNewExp: {newExp}");
+                //Console.WriteLine($"CurrentEXP: {currExp}\nNewExp: {newExp}");
 
-                var currLastPlayed = (string)valueList[index - 6][15];
-
-                //IList<IList<object>> updatedValues = new List<IList<object>>();
-                //updatedValues.Add(new List<object>());
-                //updatedValues[0].Add(newExp); //Exp
-
-                //temporary calls
-                /*
-                string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
-                string range = $"'Player character sheet'!L{index}";
-                SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
-                ValueRange expresponse = await request.ExecuteAsync();
+                var currLastPlayed = DateTime.Parse((string)valueList[index - 6][15]);
+                var newLastPlayed = reward.LastPlayedDate < currLastPlayed ? currLastPlayed : reward.LastPlayedDate;
                 
+                //Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{currExp}] CurrLastPlayed[{currLastPlayed}]");
+                //Console.WriteLine($"        NewExp[{newExp}] NewLastPlayed[{reward.LastPlayedDate}]");
 
-                string range = $"'Player character sheet'!P{index}";
-                SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
-                ValueRange playedresponse = await request.ExecuteAsync();
-                */
+                IList<IList<object>> updatedValues = new List<IList<object>>();
+                updatedValues.Add(new List<object>());
+                updatedValues[0].Add(newExp); //Exp
 
-                Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{currExp}] CurrLastPlayed[{currLastPlayed}]");
-                Console.WriteLine($"        NewExp[{newExp}] NewLastPlayed[{reward.LastPlayedDate}]");
                 
-                /*
                 //Update EXP Column
-                ValueRange requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
-                SpreadsheetsResource.ValuesResource.AppendRequest request = _service.Spreadsheets.Values.Append(requestBody,
+                ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                SpreadsheetsResource.ValuesResource.UpdateRequest request = _service.Spreadsheets.Values.Update(requestBody,
                     "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
                     $"'Player character sheet'!L{index}");
                 request.ValueInputOption = valueInputOption;
-                request.InsertDataOption = insertDataOption;
 
-                AppendValuesResponse response = await request.ExecuteAsync();
+                UpdateValuesResponse response = await request.ExecuteAsync();
 
                 updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
-                updatedValues[0].Add(reward.LastPlayedDate.ToShortDateString()); //Date last played
+                updatedValues[0].Add(newLastPlayed.ToShortDateString()); //Date last played
 
                 //Update LastPlayedColumn
-                requestBody = new ValueRange() { MajorDimension = "ROWS", Values = updatedValues };
-                request = _service.Spreadsheets.Values.Append(requestBody,
+                requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                request = _service.Spreadsheets.Values.Update(requestBody,
                     "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
                     $"'Player character sheet'!P{index}");
                 request.ValueInputOption = valueInputOption;
-                request.InsertDataOption = insertDataOption;
 
                 response = await request.ExecuteAsync();
-                */
+                
             }
             catch (Exception e)
             {
