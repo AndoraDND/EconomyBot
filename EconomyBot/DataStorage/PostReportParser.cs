@@ -68,6 +68,20 @@ namespace EconomyBot.DataStorage
             //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
 
             await Context.Channel.SendMessageAsync("Successfully polled new reports. Beginnning processing...");
+            
+            //Testing the user issue.
+            string userList = "";
+            foreach(var user in Context.Guild.Users)
+            {
+                userList += user.ToString();
+            }
+            var dumpFilePath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
+            File.WriteAllText(dumpFilePath, userList);
+            await Context.Channel.SendFileAsync(dumpFilePath, "Hey, since I'm a dumb bot, here's that list of users I'm failing to find anything on:");
+            File.Delete(dumpFilePath);
+
+            return;
+
             //Generate final output
             var output = "RewardLog:\n";
             output += "Handling Game Reports:\n";
