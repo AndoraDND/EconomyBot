@@ -122,9 +122,9 @@ namespace EconomyBot.DataStorage
                         string[] splitUser = player.playerName.Split('#');
                         //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
 
-                        var discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
-                        //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
-                        if (discordUser != default(SocketGuildUser))
+                        //var discordUser = Context.Guild.Users.Where(p => p.Username.Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).First();
+                        var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
+                        if (discordUser != null)
                         {
                             var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
                             if (index >= 0)
