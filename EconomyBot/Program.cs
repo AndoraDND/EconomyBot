@@ -123,6 +123,8 @@ namespace EconomyBot
             {
                 await guild.DownloadUsersAsync();
             }
+
+            Console.WriteLine("Done downloading guild users.");
         }
 
         private async Task Client_Ready()
