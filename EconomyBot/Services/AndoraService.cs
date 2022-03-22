@@ -151,6 +151,8 @@ namespace EconomyBot
                     return;
                 }
 
+                await command.DeferAsync(true);
+
                 var message_id = ((string)command.Data.Options.First(p => p.Name.Equals("original-message")).Value).Replace("https://discord.com/channels/", "").Split("/").Last();
                 var message = await command.Channel.GetMessageAsync(ulong.Parse(message_id));
                 var characterData = await CharacterDB.GetCharacterData(message.Author.Id);
@@ -170,7 +172,7 @@ namespace EconomyBot
                     .WithFields(new EmbedFieldBuilder() { Name = "Total Gold", Value = $"{currency.Replace("g", " Gold, ").Replace("s", " Silver, ").Replace("c", " Copper")}", IsInline = false },
                         new EmbedFieldBuilder() { Name = "Tool Proficiencies", Value = $"{toolProficiencies}", IsInline = false });
 
-                await command.RespondAsync(embed: embedBuilder.Build(), ephemeral:true);
+                await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: true);
                 //var itemList = ((string)command.Data.Options.First(p => p.Name.Equals("original-message")).Value).Split(',');
             }
             catch (Exception e)
