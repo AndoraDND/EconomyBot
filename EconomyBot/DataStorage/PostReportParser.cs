@@ -35,10 +35,10 @@ namespace EconomyBot.DataStorage
         /// </summary>
         private static string ApplicationName = "Andora Tracker GSheets Parser";
 
+        /// <summary>
+        /// Sheet URL stub for the PostReport sheet
+        /// </summary>
         private static string SheetURLStub = "1vPl8oj_pdhVwu23ZYdqjA3rgayAWyJzvyAc9iMgF-UQ";
-
-        //Range constants
-        //private const string Range_TrainingTracking = "'Academy'!A2:E";
 
         public PostReportParser(string googleCredentialsPath, DiscordSocketClient client, AndoraService andoraService)
         {
@@ -55,13 +55,22 @@ namespace EconomyBot.DataStorage
             _andoraService = andoraService;
         }
 
-        public async Task PollPlayerActivity(Discord.Commands.SocketCommandContext Context)
+        /// <summary>
+        /// Process the list of reports needing to be processed.
+        /// </summary>
+        /// <param name="Context"></param>
+        /// <returns></returns>
+        public async Task ProcessReports(Discord.Commands.SocketCommandContext Context)
         {
             await Context.Channel.SendMessageAsync("**Starting report process.** \n*Please note that this process may take some time and you may experience significant delays.*\nDo not start another process while waiting.");
 
+            #region Poll Reports 
+
+            //Collect unprocessed reports
             var GameReports = GetUnprocessedGameReports();
             var EventReports = GetUnprocessedEventReports();
 
+            //Early exit if we have no reports to process.
             if(GameReports.Count <= 0 && EventReports.Count <= 0)
             {
                 await Context.Channel.SendMessageAsync("**Finished.**\n*No pending reports to process!*");
@@ -69,167 +78,51 @@ namespace EconomyBot.DataStorage
             }
 
             var TotalCalculatedRewards = new List<CombinedReward>();
-            var ErrorHandlingPlayers = new List<Tuple<int, string, string>>();
+            var ErrorHandlingPlayers = new List<PostReport_PlayerError>();
 
-            //await Context.Guild.DownloadUsersAsync();
-            //await Context.Channel.SendMessageAsync(Context.Guild.Users.Count + "");
+            #endregion
 
             await Context.Channel.SendMessageAsync("Successfully polled new reports. *Beginnning processing...*");
 
-            await Context.Guild.DownloadUsersAsync();
-            /*
-            //Testing the user issue.
-            string userList = "";
-            userList += $"{Context.Guild.Name}[{Context.Guild.Id}] - User Count[{Context.Guild.Users.Count}]\n";
-            foreach(var user in Context.Guild.Users)
-            {
-                userList += user.ToString() + "\n";
-            }
-            var dumpPath = Directory.GetCurrentDirectory() + $"/Data/{Context.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
-            File.WriteAllText(dumpPath, userList);
-            await Context.Channel.SendFileAsync(dumpPath, "Hey, since I'm a dumb bot, here's that list of users I'm failing to find anything on:");
-            File.Delete(dumpPath);
+            #region Process Reports
 
-            return;
-            */
+            //Riddiculous that we need to do this, but whatever I guess.
+            if (_client.GetGuild(Context.Guild.Id).Users.Count != Context.Guild.Users.Count())
+            {
+                Console.WriteLine($"Need to download new users. {_client.GetGuild(Context.Guild.Id).Users.Count} != {Context.Guild.Users.Count()}");
+                await Context.Guild.DownloadUsersAsync();
+            }
 
             //Generate final output
-            var output = "RewardLog:\n";
+            var output = "Process Log:\n";
+
             output += "Handling Game Reports:\n";
-            //Handle Game Report
             foreach (var report in GameReports)
             {
-                output += $"RowID: {report.RowID}\n";
-                var rewardData = JsonConvert.DeserializeObject<List<JSONRewardData>>(report.JSON);
-                foreach (var player in rewardData)
+                HandleGameReport(Context, report, ref output, ref TotalCalculatedRewards, ref ErrorHandlingPlayers);
+                try
                 {
-                    try
-                    {
-                        string[] splitUser = player.playerName.Split('#');
-                        //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
-
-                        Discord.IUser discordUser = null;
-                        if (Context.Guild.Users.Count > 0)
-                        {
-                            foreach(var user in Context.Guild.Users)
-                            {
-                                string username = user.Username;
-                                if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
-                                {
-                                    discordUser = user;
-                                    break;
-                                }
-                            }
-                            //discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
-                        }
-                        
-                        if(discordUser == null || discordUser == default(Discord.IUser))
-                        {
-                            //discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();
-                        }
-                        //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
-                        if (discordUser != null)
-                        {
-                            var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
-                            if (index >= 0)
-                            {
-                                TotalCalculatedRewards[index].XPValue += player.playerExp;
-                                if (TotalCalculatedRewards[index].LastPlayedDate < report.MissionRunDate)
-                                {
-                                    TotalCalculatedRewards[index].LastPlayedDate = report.MissionRunDate;
-                                }
-                                if(TotalCalculatedRewards[index].LastExpDate < report.MissionRunDate)
-                                {
-                                    TotalCalculatedRewards[index].LastExpDate = report.MissionRunDate;
-                                }
-                            }
-                            else
-                            {
-                                var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.MissionRunDate, XPValue = player.playerExp };
-                                TotalCalculatedRewards.Add(newReward);
-                            }
-                        }
-                        else
-                        {
-                            ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, "Failed to find DiscordUser!"));
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player.playerName, e.Message + "\n" + e.StackTrace));
-                        continue;
-                    }
-                    await Task.Delay(1000);
+                    await _andoraService.NotifierService.HandleDispatch(Context.Guild.Id, report.DMName, report.MissionRunDate.ToShortDateString() + report.MissionRunDate.ToShortTimeString(), report.Players, report.SessionSpecifics);
                 }
+                catch(Exception e)
+                {
+                    Console.WriteLine($"Failed dispatching message to NotifierService! : {e.Message} - {e.StackTrace}");
+                }
+                await Task.Delay(1000);
             }
 
             output += "Handling Event Reports:\n";
             foreach (var report in EventReports)
             {
-                output += $"RowID: {report.RowID}\n";
-                if (report.XPAwarded > 0)
-                {
-                    foreach (var player in report.Participants)
-                    {
-                        try
-                        {
-                            string[] splitUser = player.Split('#');
-                            //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
-
-                            Discord.IUser discordUser = null;
-                            if (Context.Guild.Users.Count > 0)
-                            {
-                                foreach (var user in Context.Guild.Users)
-                                {
-                                    string username = user.Username;
-                                    if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
-                                    {
-                                        discordUser = user;
-                                        break;
-                                    }
-                                }
-                                //discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
-                            }
-
-                            if (discordUser == null || discordUser == default(Discord.IUser))
-                            {
-                                //discordUser = (await Context.Guild.SearchUsersAsync(player, 1)).First();
-                            }
-                            //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
-                            if (discordUser != null)
-                            {
-                                var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
-                                if (index >= 0)
-                                {
-                                    TotalCalculatedRewards[index].XPValue += report.XPAwarded;
-                                    if (TotalCalculatedRewards[index].LastExpDate < report.TimeStamp)
-                                    {
-                                        TotalCalculatedRewards[index].LastExpDate = report.TimeStamp;
-                                    }
-                                }
-                                else
-                                {
-                                    var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.TimeStamp, XPValue = report.XPAwarded };
-                                    TotalCalculatedRewards.Add(newReward);
-                                }
-                            }
-                            else
-                            {
-                                ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, "Failed to find DiscordUser!"));
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            ErrorHandlingPlayers.Add(new Tuple<int, string, string>(report.RowID, player, e.Message + "\n" + e.StackTrace));
-                            continue;
-                        }
-                        await Task.Delay(1000);
-                    }
-                }
+                HandleEventReport(Context, report, ref output, ref TotalCalculatedRewards, ref ErrorHandlingPlayers);
+                await Task.Delay(1000);
             }
 
-            await Context.Channel.SendMessageAsync("Successfully processed reports. *Beginning reward allocation...*");
+            #endregion
 
+            await Context.Channel.SendMessageAsync("Successfully processed reports. *Beginning reward allocation...*");
+            
+            #region Post rewards
             //Update Player Character Sheet with new Values.
             string range = "'Player character sheet'!A6:Q";
             string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
@@ -244,17 +137,26 @@ namespace EconomyBot.DataStorage
             int i = 0;
             foreach (var reward in TotalCalculatedRewards)
             {
+                var error = await UpdateCharacterSheetWithReward(charSheetValues, reward);
+
                 //Update the player character sheet
-                if(await UpdateCharacterSheetWithReward(charSheetValues, reward) == false)
+                if (error != null)
                 {
                     removeFlags.Add(i);
-                    ErrorHandlingPlayers.Add(new Tuple<int, string, string>(reward.ReportID, 
-                        reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator, 
-                        "Failed Updating PlayerCharacterSheet. Check Logs."));
+                    ErrorHandlingPlayers.Add(new PostReport_PlayerError(ReportType.Unknown,
+                        reward.ReportID,
+                        reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator,
+                        reward.XPValue,
+                        error.Item1,
+                        error.Item2));
                 }
                 i++;
                 await Task.Delay(1000);
             }
+
+            #endregion
+
+            #region Cleanup
 
             //Remove unhandled rewards
             removeFlags.Reverse();
@@ -263,27 +165,31 @@ namespace EconomyBot.DataStorage
                 TotalCalculatedRewards.RemoveAt(value);
             }
 
-            foreach(var report in GameReports)
+            //Mark our processed reports as such on the PostReport response sheet.
+            foreach (var report in GameReports)
             {
                 await SetGameReportProcessed(report);
             }
-
             foreach(var report in EventReports)
             {
                 await SetEventReportProcessed(report);
             }
 
+            #endregion
+
+            #region Output
+
             //Display output to the calling user.
             foreach (var player in TotalCalculatedRewards)
             {
                 output += $"{player.DiscordUser} [{player.LastPlayedDate}]: - {player.XPValue}\n";
-                //Console.WriteLine($"{player.DiscordUser} [{player.LastPlayedDate}]: - {player.XPValue}");
             }
             output += "\nErrorLog:\n";
             foreach(var player in ErrorHandlingPlayers)
             {
-                output += $"[{player.Item1}] {player.Item2} - {player.Item3}\n";
-                //Console.WriteLine($"Failed to handle Player in ReportID[{player.Item2}]: {player.Item1}");
+                output += $"{player.ReportType.ToString()} - [ {player.ReportRowID} ]: " +
+                    $"<Name: {player.PlayerName}, Exp: {player.ExperienceValue}> - " +
+                    $"{player.ErrorMessage} {(player.StackTrace.Length > 0 ? ($" - {player.StackTrace}"):" ")} ";
             }
 
             //Output file for testing purposes.
@@ -300,8 +206,159 @@ namespace EconomyBot.DataStorage
             }
 
             //Console.WriteLine("Finished processing reports");
+
+            #endregion
         }
 
+        /// <summary>
+        /// Handle the data of an Event Report
+        /// </summary>
+        /// <param name="Context"></param>
+        /// <param name="report"></param>
+        /// <param name="output"></param>
+        /// <param name="TotalCalculatedRewards"></param>
+        /// <param name="ErrorHandlingPlayers"></param>
+        private void HandleEventReport(Discord.Commands.SocketCommandContext Context, PostEventReport report, ref string output, ref List<CombinedReward> TotalCalculatedRewards, ref List<PostReport_PlayerError> ErrorHandlingPlayers)
+        {
+            output += $"RowID: {report.RowID}\n";
+            if (report.XPAwarded > 0)
+            {
+                foreach (var player in report.Participants)
+                {
+                    try
+                    {
+                        string[] splitUser = player.Split('#');
+                        //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
+
+                        Discord.IUser discordUser = null;
+                        if (Context.Guild.Users.Count > 0)
+                        {
+                            foreach (var user in Context.Guild.Users)
+                            {
+                                string username = user.Username;
+                                if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
+                                {
+                                    discordUser = user;
+                                    break;
+                                }
+                            }
+                            //discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                        }
+
+                        if (discordUser == null || discordUser == default(Discord.IUser))
+                        {
+                            //discordUser = (await Context.Guild.SearchUsersAsync(player, 1)).First();
+                        }
+                        //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
+                        if (discordUser != null)
+                        {
+                            var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
+                            if (index >= 0)
+                            {
+                                TotalCalculatedRewards[index].XPValue += report.XPAwarded;
+                                if (TotalCalculatedRewards[index].LastExpDate < report.TimeStamp)
+                                {
+                                    TotalCalculatedRewards[index].LastExpDate = report.TimeStamp;
+                                }
+                            }
+                            else
+                            {
+                                var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.TimeStamp, XPValue = report.XPAwarded };
+                                TotalCalculatedRewards.Add(newReward);
+                            }
+                        }
+                        else
+                        {
+                            ErrorHandlingPlayers.Add(new PostReport_PlayerError(ReportType.Event, report.RowID, player, report.XPAwarded, "Failed to find DiscordUser!"));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorHandlingPlayers.Add(new PostReport_PlayerError(ReportType.Event, report.RowID, player, report.XPAwarded, e.Message, e.StackTrace));
+                        continue;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle the data of a Game Report
+        /// </summary>
+        /// <param name="Context"></param>
+        /// <param name="report"></param>
+        /// <param name="output"></param>
+        /// <param name="TotalCalculatedRewards"></param>
+        /// <param name="ErrorHandlingPlayers"></param>
+        private void HandleGameReport(Discord.Commands.SocketCommandContext Context, PostGameReport report, ref string output, ref List<CombinedReward> TotalCalculatedRewards, ref List<PostReport_PlayerError> ErrorHandlingPlayers)
+        {
+            output += $"RowID: {report.RowID}\n";
+            var rewardData = JsonConvert.DeserializeObject<List<JSONRewardData>>(report.JSON);
+
+            foreach (var player in rewardData)
+            {
+                try
+                {
+                    string[] splitUser = player.playerName.Split('#');
+                    //Console.WriteLine(splitUser[0] + " - " + splitUser[1]);
+
+                    Discord.IUser discordUser = null;
+                    if (Context.Guild.Users.Count > 0)
+                    {
+                        foreach (var user in Context.Guild.Users)
+                        {
+                            string username = user.Username;
+                            if (username.Equals(splitUser[0]) && user.Discriminator.Equals(splitUser[1]))
+                            {
+                                discordUser = user;
+                                break;
+                            }
+                        }
+                        //discordUser = Context.Guild.Users.Where(p => p.Username.Substring(1, p.Username.Length - 2).Equals(splitUser[0]) && p.Discriminator.Equals(splitUser[1])).FirstOrDefault();
+                    }
+
+                    if (discordUser == null || discordUser == default(Discord.IUser))
+                    {
+                        //discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();
+                    }
+                    //var discordUser = (await Context.Guild.SearchUsersAsync(player.playerName, 1)).First();//.GetUser(splitUser[0], splitUser[1]);
+                    if (discordUser != null)
+                    {
+                        var index = TotalCalculatedRewards.FindIndex(p => p.DiscordUser.Id.Equals(discordUser.Id));
+                        if (index >= 0)
+                        {
+                            TotalCalculatedRewards[index].XPValue += player.playerExp;
+                            if (TotalCalculatedRewards[index].LastPlayedDate < report.MissionRunDate)
+                            {
+                                TotalCalculatedRewards[index].LastPlayedDate = report.MissionRunDate;
+                            }
+                            if (TotalCalculatedRewards[index].LastExpDate < report.MissionRunDate)
+                            {
+                                TotalCalculatedRewards[index].LastExpDate = report.MissionRunDate;
+                            }
+                        }
+                        else
+                        {
+                            var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.MissionRunDate, XPValue = player.playerExp };
+                            TotalCalculatedRewards.Add(newReward);
+                        }
+                    }
+                    else
+                    {
+                        ErrorHandlingPlayers.Add(new PostReport_PlayerError(ReportType.Game, report.RowID, player.playerName, player.playerExp, "Failed to Find DiscordUser"));
+                    }
+                }
+                catch (Exception e)
+                {
+                    ErrorHandlingPlayers.Add(new PostReport_PlayerError(ReportType.Game, report.RowID, player.playerName, player.playerExp, e.Message, e.StackTrace));
+                    continue;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get a list of PostGameReport objects based on unprocessed reports.
+        /// </summary>
+        /// <returns></returns>
         public List<PostGameReport> GetUnprocessedGameReports()
         {
             var retVal = new List<PostGameReport>();
@@ -348,6 +405,10 @@ namespace EconomyBot.DataStorage
             return retVal;
         }
 
+        /// <summary>
+        /// Get a list of PostEventReport objects based on unprocessed reports.
+        /// </summary>
+        /// <returns></returns>
         public List<PostEventReport> GetUnprocessedEventReports()
         {
             var retVal = new List<PostEventReport>();
@@ -398,37 +459,36 @@ namespace EconomyBot.DataStorage
             return retVal;
         }
 
-        public async Task<bool> UpdateCharacterSheetWithReward(IList<IList<object>> valueList, CombinedReward reward)
+        /// <summary>
+        /// Post a reward to the Player Character Sheet
+        /// </summary>
+        /// <param name="valueList"></param>
+        /// <param name="reward"></param>
+        /// <returns></returns>
+        public async Task<Tuple<string,string>> UpdateCharacterSheetWithReward(IList<IList<object>> valueList, CombinedReward reward)
         {
             if (valueList == null && valueList.Count <= 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Error updating character sheet : Value list is null or empty!");
                 Console.ForegroundColor = ConsoleColor.White;
-                return false;
+                return new Tuple<string, string>("Error updating character sheet : Value list is null or empty!", "");
             }
-
-            /*
-            Console.WriteLine($"Number of rows retrieved:{valueList.Count}");
-            if(valueList.Count > 0)
-            {
-                Console.WriteLine($"Number of columns retrieved: {valueList[0].Count}");
-            }*/
 
             try
             {
                 int index = -1;
-                for(int i = 0; i < valueList.Count; i++)
+                for (int i = 0; i < valueList.Count; i++)
                 {
-                    if(valueList.Count <= 0 || valueList[0].Count <= 0)
+                    if (valueList[i].Count <= 0) //We have an empty row.
                     {
                         continue;
                     }
 
-                    if(((string)valueList[i][1]).Equals(reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator))
+                    if(((string)valueList[i][1]).Equals(reward.DiscordUser.Username+"#"+reward.DiscordUser.Discriminator)) //Check if we found our user.
                     {
                         index = i+6;
-                        Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
+                        //Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
                         break;
                     }
                 }
@@ -437,26 +497,39 @@ namespace EconomyBot.DataStorage
                 {
                     //Failed to find user in list.
                     Console.WriteLine($"Failed to find discord user in player character sheet : {reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}");
-                    return false;
+                    return new Tuple<string, string>($"Failed to find discord user in player character sheet : {reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}", "");
                 }
 
                 SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 
-                var currExp = int.Parse(((string)valueList[index-6][11]));
+                //Parse current experience and expected experience gain
+                if(int.TryParse(((string)valueList[index-6][11]), out var currExp))
+                {
+                    //Current experience column on the Player Character Sheet is botched.
+                    return new Tuple<string, string>($"Failed to poll Player Experience: Check that column is an integer value!", "");
+                }
                 var newExp = currExp + reward.XPValue;
-                //Console.WriteLine($"CurrentEXP: {currExp}\nNewExp: {newExp}");
 
-                var currLastPlayed = DateTime.Parse((string)valueList[index - 6][15]);
+                //Parse current Last Played Date and expected new Date.
+                var dateString = (string)valueList[index - 6][15]; //Check Last Played Date Column
+                if(dateString == null || dateString.Length <= 0)
+                {
+                    //Column was empty
+                    dateString = (string)valueList[index - 6][0]; //Use the Date Created timestamp instead
+                }
+
+                if(!DateTime.TryParse(dateString, out var currLastPlayed)) //Check if parsing the timestamp and column succeeded
+                {
+                    //How even
+                    currLastPlayed = new DateTime(2022, 1, 1);
+                }
                 var newLastPlayed = reward.LastPlayedDate < currLastPlayed ? currLastPlayed : reward.LastPlayedDate;
                 
-                //Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator}[{index}] - CurrExp[{currExp}] CurrLastPlayed[{currLastPlayed}]");
-                //Console.WriteLine($"        NewExp[{newExp}] NewLastPlayed[{reward.LastPlayedDate}]");
-
+                //Update the experience column of the Player Character Sheet.
                 IList<IList<object>> updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
                 updatedValues[0].Add(newExp); //Exp
 
-                
                 //Update EXP Column
                 ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
                 SpreadsheetsResource.ValuesResource.UpdateRequest request = _service.Spreadsheets.Values.Update(requestBody,
@@ -465,10 +538,12 @@ namespace EconomyBot.DataStorage
                 request.ValueInputOption = valueInputOption;
 
                 UpdateValuesResponse response = await request.ExecuteAsync();
+                
 
+                //Update the last played date column of the Player Character Sheet.
                 updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
-                updatedValues[0].Add(newLastPlayed.ToShortDateString()); //Date last played
+                updatedValues[0].Add($"{newLastPlayed.ToShortDateString()} {newLastPlayed.ToShortTimeString()}"); //Date last played
 
                 //Update LastPlayedColumn
                 requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
@@ -485,12 +560,17 @@ namespace EconomyBot.DataStorage
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Failed to update character sheet : {e.Message}\n{e.StackTrace}");
                 Console.ForegroundColor = ConsoleColor.White;
-                return false;
+                return new Tuple<string, string>($"Failed to update character sheet : {e.Message}", e.StackTrace);
             }
 
-            return true;
+            return null;
         }
 
+        /// <summary>
+        /// Set a Post Game Report as processed on the PostReport sheet
+        /// </summary>
+        /// <param name="report"></param>
+        /// <returns></returns>
         private async Task SetGameReportProcessed(PostGameReport report)
         {
             SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
@@ -510,6 +590,11 @@ namespace EconomyBot.DataStorage
             UpdateValuesResponse response = await request.ExecuteAsync();
         }
 
+        /// <summary>
+        /// Set a Post Event Report as processed on the PostReport sheet
+        /// </summary>
+        /// <param name="report"></param>
+        /// <returns></returns>
         private async Task SetEventReportProcessed(PostEventReport report)
         {
             SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;

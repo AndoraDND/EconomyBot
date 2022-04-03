@@ -23,6 +23,11 @@ namespace EconomyBot
         public NPCPingService NPCPingService { get; set; }
 
         /// <summary>
+        /// Service that handles distribution of embed notifications to relevant channels.
+        /// </summary>
+        public NotifierService NotifierService { get; set; }
+
+        /// <summary>
         /// Database for Item costs
         /// </summary>
         public PriceDatabase PriceDB { get; set; }
@@ -67,6 +72,7 @@ namespace EconomyBot
             var gSheetsCredPath = "Data/andora-3db990b2eff4.json";
 
             NPCPingService = new NPCPingService(client);
+            NotifierService = new NotifierService(client);
             PriceDB = new PriceDatabase("PriceDB");
             AvraeParser = new AvraeSheetParser(gSheetsCredPath);
             TrackingSheetParser = new TrackingSheetParser(gSheetsCredPath);
@@ -127,9 +133,11 @@ namespace EconomyBot
             task.Wait();
 
             Console.WriteLine("Resetting DTD for players in Andora Database...");
-            task = Task.Run(async () => await AndoraDB.Patch_ResetDTD());
+            task = Task.Run(async () => await AndoraDB.Post_ResetDTD());
             task.Wait();
         }
+
+        #region Slash Commands
 
         internal async Task HandleVerifyCommand(SocketSlashCommand command)
         {
@@ -219,6 +227,140 @@ namespace EconomyBot
             }
         }
 
+        public async Task UpdateDBCharacterCommand(SocketSlashCommand command)
+        {
+            try
+            {
+                var user = (SocketGuildUser)command.Data.Options.First().Value;
+
+                bool userIsSelf = command.User.Id.Equals(user.Id);
+
+                bool hasElevatedRole = false;
+                foreach (var role in ((SocketGuildUser)command.User).Roles)
+                {
+                    if (ElevatedStatusRoles.Contains(role.Id))
+                    {
+                        hasElevatedRole = true;
+                        break;
+                    }
+                }
+
+                if (hasElevatedRole == false && userIsSelf == false)
+                {
+                    await command.RespondAsync("You do not have permissions to use this command.");
+                    return;
+                }
+
+                var characterData = await CharacterDB.GetCharacterData(user.Id, true); //We want to poll data from the Player GSheet and push to the DB.
+
+                var patchSuccessful = await AndoraDB.Patch_UpdateCharacter(characterData);
+
+                var embedBuilder = new EmbedBuilder()
+                        .WithTitle($"Update Character : {(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}")
+                        .WithDescription(patchSuccessful ? "Updated Successfully!" : "Error updating character!")
+                        .WithColor(patchSuccessful ? Color.Green : Color.Red);
+
+                await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: (hasElevatedRole || (userIsSelf == false)) );
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to update Character Sheet : {e.Message}");
+            }
+        }
+
+        public async Task GetCharacterDTDCommand(SocketSlashCommand command)
+        {
+            try
+            {
+                var user = (SocketGuildUser)command.Data.Options.First().Value;
+
+                //bool userIsSelf = command.User.Id.Equals(user.Id);
+
+                bool hasElevatedRole = false;
+                foreach (var role in ((SocketGuildUser)command.User).Roles)
+                {
+                    if (ElevatedStatusRoles.Contains(role.Id))
+                    {
+                        hasElevatedRole = true;
+                        break;
+                    }
+                }
+
+                if (hasElevatedRole == false)
+                {
+                    await command.RespondAsync("You do not have permissions to use this command.");
+                    return;
+                }
+
+                await command.DeferAsync(true);
+
+                var patchData = await AndoraDB.Get_DTD(user.Id);
+
+                var embedBuilder = new EmbedBuilder()
+                        .WithTitle($"DTDs remaining for {(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}");
+                if (patchData != null)
+                {
+                    embedBuilder.AddField(new EmbedFieldBuilder() { Name = "DTDs", Value = patchData.dtds });
+                }
+                else
+                {
+                    embedBuilder.WithDescription("Error: Failed to poll remaining DTD!");
+                }
+
+                await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to poll remaining DTD : {e.Message}");
+            }
+        }
+
+        public async Task UpdateCharacterDTDCommand(SocketSlashCommand command)
+        {
+            try
+            {
+                var user = (SocketGuildUser)command.Data.Options.First().Value;
+                var amount = ((int)command.Data.Options.First(p => p.Name.Equals("dtd-amount")).Value);
+
+                //bool userIsSelf = command.User.Id.Equals(user.Id);
+
+                bool hasElevatedRole = false;
+                foreach (var role in ((SocketGuildUser)command.User).Roles)
+                {
+                    if (ElevatedStatusRoles.Contains(role.Id))
+                    {
+                        hasElevatedRole = true;
+                        break;
+                    }
+                }
+
+                if (hasElevatedRole == false)
+                {
+                    await command.RespondAsync("You do not have permissions to use this command.");
+                    return;
+                }
+
+                await command.DeferAsync(true);
+
+                var patchData = await AndoraDB.Patch_DTD(user.Id, amount);
+
+                var embedBuilder = new EmbedBuilder()
+                        .WithTitle($"Updating DTD remaining for {(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}")
+                        .WithDescription(patchData != null ? "Updated Successfully!" : "Error updating DTD!");
+
+                if(patchData != null)
+                {
+                    embedBuilder.AddField(new EmbedFieldBuilder() { Name = "DTDs Remaining", Value = patchData.dtds });
+                }
+
+                await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: true);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to update Character DTD : {e.Message}");
+            }
+        }
+
         public async Task GetAppearanceCommand(SocketSlashCommand command)
         {
             try
@@ -266,5 +408,7 @@ namespace EconomyBot
                 Console.WriteLine($"Failed to poll character appearance data : {e.Message}");
             }
         }
+        
+        #endregion
     }
 }

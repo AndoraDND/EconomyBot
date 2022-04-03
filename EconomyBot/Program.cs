@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -145,6 +146,28 @@ namespace EconomyBot
             appearanceCommand.WithDescription("Get the Listed Appearance of a User's Character.");
             appearanceCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
 
+            var dtdCommand = new SlashCommandBuilder();
+            dtdCommand.WithName("dtd");
+            dtdCommand.WithDescription("Handle updates related to DTD.");
+            dtdCommand.AddOption(new SlashCommandOptionBuilder()
+                .WithName("get")
+                .WithDescription("Get the remaining DTDs for a user.")
+                .WithType(ApplicationCommandOptionType.SubCommand)
+                .AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true)
+                );
+            dtdCommand.AddOption(new SlashCommandOptionBuilder()
+               .WithName("set")
+               .WithDescription("Spend DTDs for a user.")
+               .WithType(ApplicationCommandOptionType.SubCommand)
+               .AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true)
+               .AddOption("dtd-amount", ApplicationCommandOptionType.Integer, "Amount of DTDs to spend", true)
+               );
+
+            var updateDBCommand = new SlashCommandBuilder();
+            updateDBCommand.WithName("update-db");
+            updateDBCommand.WithDescription("Update the backend with a character's current data.");
+            updateDBCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
+
             try
             {
                 foreach (var guild in _client.Guilds)
@@ -152,6 +175,8 @@ namespace EconomyBot
                     await guild.CreateApplicationCommandAsync(verifyCommand.Build());
                     await guild.CreateApplicationCommandAsync(charSheetCommand.Build());
                     await guild.CreateApplicationCommandAsync(appearanceCommand.Build());
+                    await guild.CreateApplicationCommandAsync(dtdCommand.Build());
+                    await guild.CreateApplicationCommandAsync(updateDBCommand.Build());
                 }
             }
             catch (Exception e)
@@ -178,6 +203,25 @@ namespace EconomyBot
                 case "appearance":
                 {
                     await andoraService.GetAppearanceCommand(command);
+                    break;
+                }
+                case "update-db":
+                {
+                    await andoraService.UpdateDBCharacterCommand(command);
+                    break;
+                }
+                case "dtd":
+                {
+                    switch (command.Data.Options.First().Name)
+                    {
+                        case "get":
+                            await andoraService.GetCharacterDTDCommand(command);
+                            break;
+                        case "set":
+                            await andoraService.UpdateCharacterDTDCommand(command);
+                            break;
+                    }
+                    
                     break;
                 }
             }

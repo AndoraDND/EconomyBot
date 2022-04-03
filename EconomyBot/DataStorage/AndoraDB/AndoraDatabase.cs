@@ -22,7 +22,7 @@ namespace EconomyBot.DataStorage
 
         private string _cachedJWTToken;
 
-        internal AndoraDatabase(TokenCredentials credentials)
+        public AndoraDatabase(TokenCredentials credentials)
         {
             client = new HttpClient();
 
@@ -47,32 +47,45 @@ namespace EconomyBot.DataStorage
         /// <param name="user"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        public async Task Login(string user, string password)
+        public async Task<bool> Login(string user = null, string password = null)
         {
+            if(user == null)
+            {
+                user = andoraDB_User;
+            }
+            if (password == null)
+            {
+                password = andoraDB_Pass;
+            }
+
             var api_stub = "/login";
             //var pass = GetHashedPassword(password); //DEPRECATED. HASHING IS HANDLED ON THE BACKEND, OUR SERVICE SITS IN THE SAME PRIVATE NETWORK.
 
             var loginObj = new LoginJson() { user = user, password = password };
             var json = JsonConvert.SerializeObject(loginObj);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await client.PostAsync(Database_URI + api_stub, content);
-
+            
             try
             {
+                var response = await client.PostAsync(Database_URI + api_stub, content);
+
                 response.EnsureSuccessStatusCode();
                 if (response.IsSuccessStatusCode)
                 {
                     _cachedJWTToken = JsonConvert.DeserializeObject<ResponseJson>((string)(await response.Content.ReadAsStringAsync())).token;
                     Console.WriteLine("Successfully logged into Andora Database.");
+                    return true;
                 }
                 else
                 {
                     Console.WriteLine("Error: Failed to log into Andora Database!");
+                    return false;
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Error: Failed to log into Andora Database! {e.Message}");
+                return false;
             }
         }
 
@@ -712,21 +725,85 @@ namespace EconomyBot.DataStorage
                 return false;
             }
         }
-    
-        /// <summary>
-        /// TODO: Fix this when the backend service updates its README
-        /// </summary>
-        /// <returns></returns>
-        public async Task<bool> Patch_ResetDTD()
-        {
-            var api_stub = "/dtd";
 
-            var request = new HttpRequestMessage(HttpMethod.Patch, Database_URI + api_stub);
-            request.Headers.Add("Token", _cachedJWTToken);
-            var response = await client.SendAsync(request);
+        /// <summary>
+        /// Get DTDs remaining for a specific character
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<DTDJson> Get_DTD(ulong id)
+        {
+            var api_stub = "/dtds";
+            var stubBuilder = new StubParameterBuilder();
+            stubBuilder.AddParameter("id", id.ToString());
+            api_stub += stubBuilder.Build(); //$"?id={id}";
 
             try
             {
+                var response = await client.GetAsync(Database_URI + api_stub);
+
+                response.EnsureSuccessStatusCode();
+                var retVal = JsonConvert.DeserializeObject<DTDJson>(await response.Content.ReadAsStringAsync());
+                return retVal;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Update the remaining DTDs for a character.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public async Task<DTDJson> Patch_DTD(ulong id, int amount)
+        {
+            var api_stub = "/dtds";
+            var stubBuilder = new StubParameterBuilder();
+            stubBuilder.AddParameter("id", id.ToString());
+            stubBuilder.AddParameter("dtds", amount.ToString());
+            api_stub += stubBuilder.Build(); //$"?id={id}&gold={amount}";
+
+            var content = new StringContent("", Encoding.UTF8, "application/json");
+            content.Headers.Add("Token", _cachedJWTToken);
+
+            try
+            {
+                var response = await client.PatchAsync(Database_URI + api_stub, content);
+                response.EnsureSuccessStatusCode();
+
+                var JSONObj = JsonConvert.DeserializeObject<DTDJson>(await response.Content.ReadAsStringAsync());
+                return JSONObj;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Reset the DTDs remaining for all players in the database.
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> Post_ResetDTD(int amount = 7)
+        {
+            var api_stub = "/dtds";
+            if (amount != 7)
+            {
+                var stubBuilder = new StubParameterBuilder();
+                stubBuilder.AddParameter("dtds", amount.ToString());
+                api_stub += stubBuilder.Build();
+            }
+
+            var content = new StringContent("", Encoding.UTF8, "application/json");
+            content.Headers.Add("Token", _cachedJWTToken);
+            
+            try
+            {
+                var response = await client.PostAsync(Database_URI + api_stub, content);
+
                 response.EnsureSuccessStatusCode();
                 return true;
             }

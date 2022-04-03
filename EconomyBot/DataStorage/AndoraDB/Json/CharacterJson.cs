@@ -82,5 +82,34 @@ namespace EconomyBot.DataStorage.AndoraDB.Json
 
             return retVal;
         }
+
+        public bool IsSameCharacter(CharacterDataJson other)
+        {
+            return other.id.Equals(id);
+        }
+
+
+        public override bool Equals(object obj)
+        {
+            if(obj is CharacterDataJson)
+            {
+                var other = obj as CharacterDataJson;
+                if (!other.id.Equals(id)) return false;
+                if (!other.dtds.Equals(dtds)) return false;
+                if (!other.exp.Equals(exp)) return false;
+                if (!other.level.Equals(level)) return false;
+                if (!other.@class.Equals(@class)) return false;
+                if (!other.name.Equals(name)) return false;
+                if (!other.faction.Equals(faction)) return false;
+                if (!other.race.Equals(race)) return false;
+                if (!other.region.Equals(region)) return false;
+                if (!other.last_played.Equals(last_played)) return false;
+                if (!other.last_exp_earned_date.Equals(last_exp_earned_date)) return false;
+                if (!other.sheet.Equals(sheet)) return false;
+
+                return true;
+            }
+            return false;
+        }
     }
 }

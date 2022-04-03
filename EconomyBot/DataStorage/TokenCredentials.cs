@@ -5,7 +5,7 @@ using System.Text;
 namespace EconomyBot.DataStorage
 {
     [System.Serializable]
-    internal class TokenCredentials
+    public class TokenCredentials
     {
         public string Bot_Token;
         public string AndoraDB_User;

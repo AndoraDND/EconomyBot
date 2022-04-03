@@ -59,7 +59,7 @@ namespace EconomyBot.DataStorage
         /// </summary>
         /// <param name="discordID"></param>
         /// <returns></returns>
-        public async Task<CharacterData> GetCharacterData(ulong discordID)
+        public async Task<CharacterData> GetCharacterData(ulong discordID, bool forceGSheet = false)
         {
             var characterDataIndex = _cachedCharacterData.FindIndex(p => p.DiscordID.Equals(discordID));
             if(characterDataIndex >= 0)
@@ -68,7 +68,7 @@ namespace EconomyBot.DataStorage
             }
 
             //Didn't find character data within cached list
-            return await PollCharacterData(discordID);
+            return await PollCharacterData(discordID, forceGSheet);
         }
 
         /// <summary>
@@ -77,14 +77,14 @@ namespace EconomyBot.DataStorage
         /// </summary>
         /// <param name="discordID"></param>
         /// <returns></returns>
-        private async Task<CharacterData> PollCharacterData(ulong discordID)
+        private async Task<CharacterData> PollCharacterData(ulong discordID, bool forceGSheet = false)
         {
             //Get the expected Discord user, find their name. This will be used for parsing our google sheet
             var discordUser = await _discordClient.GetUserAsync(discordID);
             var discordName = $"{discordUser.Username}#{discordUser.Discriminator}";
 
             bool backend_success = false;
-            if(_andoraDB != null)
+            if(_andoraDB != null && forceGSheet == false)
             {
                 var characterJson = await _andoraDB.Get_FindCharacterData(discordID);
 
