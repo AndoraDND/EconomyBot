@@ -16,6 +16,7 @@ namespace EconomyBot.DataStorage
 {
     public class PostReportParser
     {
+        //Shay is a nerd
         private AndoraService _andoraService;
 
         private DiscordSocketClient _client;
