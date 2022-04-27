@@ -16,7 +16,6 @@ namespace EconomyBot.DataStorage
 {
     public class PostReportParser
     {
-        //Shay is a nerd
         private AndoraService _andoraService;
 
         private DiscordSocketClient _client;
@@ -88,7 +87,7 @@ namespace EconomyBot.DataStorage
             #region Process Reports
 
             //Riddiculous that we need to do this, but whatever I guess.
-            if (_client.GetGuild(Context.Guild.Id).Users.Count != Context.Guild.Users.Count())
+            if (true) //_client.GetGuild(Context.Guild.Id).Users.Count != Context.Guild.Users.Count())
             {
                 Console.WriteLine($"Need to download new users. {_client.GetGuild(Context.Guild.Id).Users.Count} != {Context.Guild.Users.Count()}");
                 await Context.Guild.DownloadUsersAsync();
@@ -139,6 +138,7 @@ namespace EconomyBot.DataStorage
             foreach (var reward in TotalCalculatedRewards)
             {
                 var error = await UpdateCharacterSheetWithReward(charSheetValues, reward);
+                //Tuple<string,string> error = null;
 
                 //Update the player character sheet
                 if (error != null)
@@ -190,7 +190,7 @@ namespace EconomyBot.DataStorage
             {
                 output += $"{player.ReportType.ToString()} - [ {player.ReportRowID} ]: " +
                     $"<Name: {player.PlayerName}, Exp: {player.ExperienceValue}> - " +
-                    $"{player.ErrorMessage} {(player.StackTrace.Length > 0 ? ($" - {player.StackTrace}"):" ")} ";
+                    $"{player.ErrorMessage} {(player.StackTrace.Length > 0 ? ($" - {player.StackTrace}"):" ")} \n";
             }
 
             //Output file for testing purposes.
