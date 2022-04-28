@@ -257,14 +257,14 @@ namespace EconomyBot.DataStorage
                             if (index >= 0)
                             {
                                 TotalCalculatedRewards[index].XPValue += report.XPAwarded;
-                                if (TotalCalculatedRewards[index].LastExpDate < report.TimeStamp)
+                                if (TotalCalculatedRewards[index].LastExpDate < DateTime.MinValue)
                                 {
-                                    TotalCalculatedRewards[index].LastExpDate = report.TimeStamp;
+                                    TotalCalculatedRewards[index].LastExpDate = DateTime.MinValue;
                                 }
                             }
                             else
                             {
-                                var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = report.TimeStamp, XPValue = report.XPAwarded };
+                                var newReward = new CombinedReward() { ReportID = report.RowID, DiscordUser = discordUser, LastPlayedDate = DateTime.MinValue, XPValue = report.XPAwarded };
                                 TotalCalculatedRewards.Add(newReward);
                             }
                         }
@@ -504,7 +504,7 @@ namespace EconomyBot.DataStorage
                 SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
                 
                 //Parse current experience and expected experience gain
-                if(int.TryParse(((string)valueList[index-6][11]), out var currExp))
+                if(!int.TryParse(((string)valueList[index-6][11]), out var currExp))
                 {
                     //Current experience column on the Player Character Sheet is botched.
                     return new Tuple<string, string>($"Failed to poll Player Experience: Check that column is an integer value!", "");
