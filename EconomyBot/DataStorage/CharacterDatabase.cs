@@ -139,7 +139,14 @@ namespace EconomyBot.DataStorage
                             Class = ((string)sData[13]),
                             LastPlayed = lastplayed,
                             DTD = 0,
-                            Last_Exp_Earned_Date = lastplayed
+                            Last_Exp_Earned_Date = lastplayed,
+                            Last_Event_Exp_Date = DateTime.MinValue,
+                            Last_Event_Part_Date = DateTime.MinValue,
+                            Last_Rumor_Part_Date = DateTime.MinValue,
+                            Total_Sessions_Played = 0,
+                            Total_Event_Part = 0,
+                            Total_NPC_Pings = 0,
+                            Total_Rumor_Part = 0
                         };
 
                         _cachedCharacterData.Add(characterData);

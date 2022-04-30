@@ -58,6 +58,20 @@ namespace EconomyBot.DataStorage.AndoraDB.Json
         /// </summary>
         public string last_exp_earned_date { get; set; }
 
+        public string last_event_part_date { get; set; }
+
+        public string last_event_exp_date { get; set; }
+
+        public string last_rumor_part_date { get; set; }
+
+        public int total_sessions_played { get; set; }
+
+        public int total_event_part { get; set; }
+
+        public int total_rumor_part { get; set; }
+
+        public int total_npc_pings { get; set; }
+
         /// <summary>
         /// Google Sheets URL for the character's sheet. This should be stored as a Google API stub.
         /// </summary>
@@ -75,12 +89,25 @@ namespace EconomyBot.DataStorage.AndoraDB.Json
             retVal.region = data.Region;
             retVal.level = data.Level;
             retVal.exp = data.Experience;
-            retVal.last_played = $"{data.LastPlayed.Month.ToString("00")}-{data.LastPlayed.Day.ToString("00")}-{data.LastPlayed.Year}"; //Dumb, but whatever. Backend too picky.
-            retVal.last_exp_earned_date = $"{data.Last_Exp_Earned_Date.Month.ToString("00")}-{data.Last_Exp_Earned_Date.Day.ToString("00")}-{data.Last_Exp_Earned_Date.Year}";
+            retVal.last_played = DateTime_ToDBString(data.LastPlayed);//$"{data.LastPlayed.Month.ToString("00")}-{data.LastPlayed.Day.ToString("00")}-{data.LastPlayed.Year}"; //Dumb, but whatever. Backend too picky.
+            retVal.last_exp_earned_date = DateTime_ToDBString(data.Last_Exp_Earned_Date);//$"{data.Last_Exp_Earned_Date.Month.ToString("00")}-{data.Last_Exp_Earned_Date.Day.ToString("00")}-{data.Last_Exp_Earned_Date.Year}";
             retVal.dtds = data.DTD;
+
+            retVal.last_event_exp_date = DateTime_ToDBString(data.Last_Event_Exp_Date);
+            retVal.last_event_part_date = DateTime_ToDBString(data.Last_Event_Part_Date);
+            retVal.last_rumor_part_date = DateTime_ToDBString(data.Last_Rumor_Part_Date);
+            retVal.total_sessions_played = data.Total_Sessions_Played;
+            retVal.total_event_part = data.Total_Event_Part;
+            retVal.total_rumor_part = data.Total_Rumor_Part;
+            retVal.total_npc_pings = data.Total_NPC_Pings;
             retVal.sheet = data.AvraeURL;
 
             return retVal;
+        }
+
+        private static string DateTime_ToDBString(DateTime dt)
+        {
+            return $"{dt.Month.ToString("00")}-{dt.Day.ToString("00")}-{dt.Year.ToString("0000")}";
         }
 
         public bool IsSameCharacter(CharacterDataJson other)

@@ -75,6 +75,20 @@ namespace EconomyBot.DataStorage
         /// </summary>
         public DateTime Last_Exp_Earned_Date;
 
+        public DateTime Last_Event_Exp_Date;
+
+        public DateTime Last_Rumor_Part_Date;
+
+        public DateTime Last_Event_Part_Date;
+
+        public int Total_Sessions_Played;
+
+        public int Total_Event_Part;
+
+        public int Total_Rumor_Part;
+
+        public int Total_NPC_Pings;
+
         /// <summary>
         /// URL stub for Avrae-based character sheet
         /// </summary>
@@ -95,6 +109,13 @@ namespace EconomyBot.DataStorage
             LastPlayed = DateTime.Parse(json.last_played);
             DTD = json.dtds;
             Last_Exp_Earned_Date = DateTime.Parse((json.last_exp_earned_date.Length > 0 ? json.last_exp_earned_date:json.last_played));
+            Last_Event_Exp_Date = DateTime.Parse(json.last_event_exp_date);
+            Last_Rumor_Part_Date = DateTime.Parse(json.last_rumor_part_date);
+            Last_Event_Part_Date = DateTime.Parse(json.last_event_part_date);
+            Total_Sessions_Played = json.total_sessions_played;
+            Total_Event_Part = json.total_event_part;
+            Total_Rumor_Part = json.total_rumor_part;
+            Total_NPC_Pings = json.total_npc_pings; 
             AvraeURL = json.sheet;
         }
 

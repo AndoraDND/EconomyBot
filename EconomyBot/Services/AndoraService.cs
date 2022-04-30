@@ -251,6 +251,8 @@ namespace EconomyBot
                     return;
                 }
 
+                await command.DeferAsync(true);
+
                 var characterData = await CharacterDB.GetCharacterData(user.Id, true); //We want to poll data from the Player GSheet and push to the DB.
 
                 var patchSuccessful = await AndoraDB.Patch_UpdateCharacter(characterData);
@@ -260,7 +262,7 @@ namespace EconomyBot
                         .WithDescription(patchSuccessful ? "Updated Successfully!" : "Error updating character!")
                         .WithColor(patchSuccessful ? Color.Green : Color.Red);
 
-                await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: (hasElevatedRole || (userIsSelf == false)) );
+                await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: (hasElevatedRole || (userIsSelf == false)) );
             }
             catch (Exception e)
             {
