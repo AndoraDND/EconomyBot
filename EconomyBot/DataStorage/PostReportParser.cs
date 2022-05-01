@@ -356,6 +356,100 @@ namespace EconomyBot.DataStorage
             }
         }
 
+        public Tuple<int,int> GetSessions_FromGameReports(string discordName)
+        {
+            int totalSessions = 0;
+            int totalXP = 0;
+
+            var values = GetReportSheetDB(0, $"'Post Game Reports (PGR)'!A34:P", 34, false);
+            int rowID = 34;
+            foreach (var row in values)
+            {
+                try
+                {
+                    var players = new List<string>();
+                    for (int i = 3; i <= 8; i++)
+                    {
+                        if (((string)row[i]) != null && ((string)row[i]).Length > 0)
+                        {
+                            players.Add((string)row[i]);
+                        }
+                    }
+
+                    if (!players.Contains(discordName))
+                    {
+                        continue;
+                    }
+
+                    totalSessions++;
+
+                    var JSON = (string)row[14];
+                    var jsonData = JsonConvert.DeserializeObject<List<JSONRewardData>>(JSON);
+                    var rewardData = jsonData.FirstOrDefault(p => p.playerName.Contains(discordName));
+                    if (rewardData != null)
+                    {
+                        totalXP += rewardData.playerExp;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to process row <{rowID}> : {e.Message}");
+                }
+
+                //Increment row ID
+                rowID++;
+            }
+
+            return new Tuple<int, int>(totalSessions, totalXP);
+        }
+
+        public Tuple<int,int> GetEventParticipation_FromEventReports(string discordName)
+        {
+            int totalEvents = 0;
+            int totalXP = 0;
+
+            var values = GetReportSheetDB(0, $"'Post Event Reports (PER)'!A17:P", 17, false);
+            int rowID = 17;
+            foreach (var row in values)
+            {
+                try
+                {
+                    if(row[5] == null || ((string)row[5]).Length <= 0 || !int.TryParse((string)row[5], out var xp))
+                    {
+                        continue;
+                    }
+
+                    
+
+                    //var participants = new List<string>();
+                    //var valueArr = ((string)row[4]).Replace("\n", "").Split(',');
+
+                    if (((string)row[4]).Contains(discordName))
+                    {
+                        totalEvents++;
+
+                        if (xp < 1)
+                        {
+                            continue;
+                        }
+                        if (int.TryParse((string)row[5], out xp)) 
+                        { 
+                            totalXP += xp;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to process row <{rowID}> : {e.Message}");
+                }
+
+                //Increment row ID
+                rowID++;
+            }
+
+            return new Tuple<int, int>(totalEvents, totalXP);
+        }
+
         /// <summary>
         /// Get a list of PostGameReport objects based on unprocessed reports.
         /// </summary>

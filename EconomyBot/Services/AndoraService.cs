@@ -255,11 +255,20 @@ namespace EconomyBot
 
                 var characterData = await CharacterDB.GetCharacterData(user.Id, true); //We want to poll data from the Player GSheet and push to the DB.
 
+                var sessionData = PostReportParser.GetSessions_FromGameReports(user.Username + "#" + user.Discriminator);
+                var eventData = PostReportParser.GetEventParticipation_FromEventReports(user.Username + "#" + user.Discriminator);
+
+                characterData.Total_Event_Part = eventData.Item1;
+                characterData.Total_Sessions_Played = sessionData.Item1;
+
+                var totalXP = sessionData.Item2 + eventData.Item2;
+                bool xpMatch = characterData.Experience == totalXP + 1;
+
                 var patchSuccessful = await AndoraDB.Patch_UpdateCharacter(characterData);
 
                 var embedBuilder = new EmbedBuilder()
                         .WithTitle($"Update Character : {(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}")
-                        .WithDescription(patchSuccessful ? "Updated Successfully!" : "Error updating character!")
+                        .WithDescription((patchSuccessful ? "Updated Successfully!" : "Error updating character!") + "\n" + (xpMatch ? "Experience Correct" : $"Experience Mismatch - Listed <{characterData.Experience}> Calculated <{totalXP+1}>"))
                         .WithColor(patchSuccessful ? Color.Green : Color.Red);
 
                 await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: (hasElevatedRole || (userIsSelf == false)) );
