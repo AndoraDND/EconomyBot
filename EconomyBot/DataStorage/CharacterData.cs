@@ -108,10 +108,31 @@ namespace EconomyBot.DataStorage
             Experience = json.exp;
             LastPlayed = DateTime.Parse(json.last_played);
             DTD = json.dtds;
-            Last_Exp_Earned_Date = DateTime.Parse((json.last_exp_earned_date.Length > 0 ? json.last_exp_earned_date:json.last_played));
-            Last_Event_Exp_Date = DateTime.Parse(json.last_event_exp_date);
-            Last_Rumor_Part_Date = DateTime.Parse(json.last_rumor_part_date);
-            Last_Event_Part_Date = DateTime.Parse(json.last_event_part_date);
+            //Parse Dates. Avoiding error where the database is storing null values. Only parse on success.
+            if (DateTime.TryParse(json.last_exp_earned_date.Length > 0 ? json.last_exp_earned_date : json.last_played, out var dt))
+            {
+                Last_Exp_Earned_Date = dt;
+            }
+            else
+            {
+                Last_Exp_Earned_Date = DateTime.MinValue;
+            }
+
+            if(DateTime.TryParse(json.last_event_exp_date, out dt))
+                Last_Event_Exp_Date = dt;
+            else
+                Last_Event_Exp_Date = DateTime.MinValue;
+
+            if (DateTime.TryParse(json.last_rumor_part_date, out dt))
+                Last_Rumor_Part_Date = dt;
+            else
+                Last_Rumor_Part_Date = DateTime.MinValue;
+
+            if (DateTime.TryParse(json.last_event_part_date, out dt))
+                Last_Event_Part_Date = dt;
+            else
+                Last_Event_Part_Date = DateTime.MinValue;
+
             Total_Sessions_Played = json.total_sessions_played;
             Total_Event_Part = json.total_event_part;
             Total_Rumor_Part = json.total_rumor_part;
