@@ -55,6 +55,8 @@ namespace EconomyBot.DataStorage
             _andoraService = andoraService;
         }
 
+        private IList<IList<object>> cachedPlayerCharacterSheet = null;
+
         /// <summary>
         /// Process the list of reports needing to be processed.
         /// </summary>
@@ -121,23 +123,24 @@ namespace EconomyBot.DataStorage
             #endregion
 
             await Context.Channel.SendMessageAsync("Successfully processed reports. *Beginning reward allocation...*");
-            
+
             #region Post rewards
+
             //Update Player Character Sheet with new Values.
             string range = "'Player character sheet'!A6:Q";
             string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
 
             SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
             ValueRange response = await request.ExecuteAsync();
-            var charSheetValues = response.Values;
+            cachedPlayerCharacterSheet = response.Values;
 
             await Task.Delay(60000 - (DateTime.Now.Second * 1000)); // :(
-
+            
             List<int> removeFlags = new List<int>();
             int i = 0;
             foreach (var reward in TotalCalculatedRewards)
             {
-                var error = await UpdateCharacterSheetWithReward(charSheetValues, reward);
+                var error = await UpdateCharacterSheetWithReward(cachedPlayerCharacterSheet, reward);
                 //Tuple<string,string> error = null;
 
                 //Update the player character sheet
@@ -152,7 +155,7 @@ namespace EconomyBot.DataStorage
                         error.Item2));
                 }
                 i++;
-                await Task.Delay(1000);
+                await Task.Delay(6000);
             }
 
             #endregion
@@ -625,33 +628,86 @@ namespace EconomyBot.DataStorage
                 updatedValues.Add(new List<object>());
                 updatedValues[0].Add(newExp); //Exp
 
-                //Update EXP Column
-                ValueRange requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
-                SpreadsheetsResource.ValuesResource.UpdateRequest request = _service.Spreadsheets.Values.Update(requestBody,
-                    "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
-                    $"'Player character sheet'!L{index}");
-                request.ValueInputOption = valueInputOption;
+                //TODO: Batch requests. https://developers.google.com/sheets/api/guides/batch
+                //As is, this is stupid. But it works for now.
 
-                UpdateValuesResponse response = await request.ExecuteAsync();
-                
+                ValueRange requestBody;
+                SpreadsheetsResource.ValuesResource.UpdateRequest request;
+                UpdateValuesResponse response;
+                try
+                {
+                    //Update EXP Column
+                    requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                    request = _service.Spreadsheets.Values.Update(requestBody,
+                        "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                        $"'Player character sheet'!L{index}");
+                    request.ValueInputOption = valueInputOption;
+
+                    response = await request.ExecuteAsync();
+                }
+                catch(Exception e)
+                {
+                    if (e.Message.Equals("Google.Apis.Requests.RequestError"))
+                    {
+                        //Rate limited. Try again.
+                        await Task.Delay(60000);
+
+                        requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                        request = _service.Spreadsheets.Values.Update(requestBody,
+                            "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                            $"'Player character sheet'!L{index}");
+                        request.ValueInputOption = valueInputOption;
+
+                        response = await request.ExecuteAsync();
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
+
 
                 //Update the last played date column of the Player Character Sheet.
                 updatedValues = new List<IList<object>>();
                 updatedValues.Add(new List<object>());
                 updatedValues[0].Add($"{newLastPlayed.ToShortDateString()} {newLastPlayed.ToShortTimeString()}"); //Date last played
 
-                //Update LastPlayedColumn
-                requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
-                request = _service.Spreadsheets.Values.Update(requestBody,
-                    "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
-                    $"'Player character sheet'!P{index}");
-                request.ValueInputOption = valueInputOption;
+                try
+                {
+                    //Update LastPlayedColumn
+                    requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                    request = _service.Spreadsheets.Values.Update(requestBody,
+                        "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                        $"'Player character sheet'!P{index}");
+                    request.ValueInputOption = valueInputOption;
 
-                response = await request.ExecuteAsync();
+                    response = await request.ExecuteAsync();
+                }
+                catch(Exception e)
+                {
+                    if (e.Message.Equals("Google.Apis.Requests.RequestError"))
+                    {
+                        //Rate limited. Try again.
+                        await Task.Delay(60000);
+
+                        requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                        request = _service.Spreadsheets.Values.Update(requestBody,
+                            "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                            $"'Player character sheet'!P{index}");
+                        request.ValueInputOption = valueInputOption;
+
+                        response = await request.ExecuteAsync();
+                    }
+                    else
+                    {
+                        throw e;
+                    }
+                }
                 
             }
             catch (Exception e)
             {
+                
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Failed to update character sheet : {e.Message}\n{e.StackTrace}");
                 Console.ForegroundColor = ConsoleColor.White;
