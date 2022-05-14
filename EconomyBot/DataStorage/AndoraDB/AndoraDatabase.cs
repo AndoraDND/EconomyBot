@@ -13,7 +13,7 @@ namespace EconomyBot.DataStorage
 {
     public class AndoraDatabase
     {
-        private const string Database_URI = "http://ec2-3-87-30-137.compute-1.amazonaws.com:1234";
+        private const string Database_URI = "http://hastur-lb-168364296.us-east-1.elb.amazonaws.com:1234";
 
         private HttpClient client;
 
