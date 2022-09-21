@@ -349,13 +349,15 @@ namespace EconomyBot
         /// </summary>
         /// <param name="guild"></param>
         /// <param name="channel"></param>
-        public void RemoveWatchChannel(ulong guild, ulong channel)
+        public bool RemoveWatchChannel(ulong guild, ulong channel)
         {
+            bool returnVal = false;
             if(_trackedGuildList.ContainsKey(guild))
             {
                 if(_trackedGuildList[guild].WatchedChannels.Contains(channel))
                 {
                     _trackedGuildList[guild].WatchedChannels.Remove(channel);
+                    returnVal = true;
                 }
 
                 SaveGuildData();
@@ -372,6 +374,7 @@ namespace EconomyBot
 
             SaveGuildData();
 #endif
+            return returnVal;
         }
 
         /// <summary>

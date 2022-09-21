@@ -42,8 +42,28 @@ namespace EconomyBot.Commands
 
             if (channel is SocketTextChannel)
             {
-                _service.RemoveWatchChannel(Context.Guild.Id, channel.Id);
+                if (_service.RemoveWatchChannel(Context.Guild.Id, channel.Id))
+                {
+                    await ReplyAsync("Watched channel removed!");
+                }
+                else
+                {
+                    await ReplyAsync("Error attempting to remove channel!");
+                }
+            }
+        }
+        [Command("rwatchid", RunMode = RunMode.Async), Alias("rwid"), Summary("Remove a channel from the watched channel list")]
+        public async Task RemoveWatchedChannelByIDCommandAsync(ulong channelID)
+        {
+            await Context.Channel.DeleteMessageAsync(Context.Message);
+
+            if (_service.RemoveWatchChannel(Context.Guild.Id, channelID))
+            {
                 await ReplyAsync("Watched channel removed!");
+            }
+            else
+            {
+                await ReplyAsync("Error attempting to remove channel!");
             }
         }
 
