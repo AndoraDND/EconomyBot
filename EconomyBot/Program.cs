@@ -168,6 +168,17 @@ namespace EconomyBot
             updateDBCommand.WithDescription("Update the backend with a character's current data.");
             updateDBCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
 
+            var resetPriorityPbp = new SlashCommandBuilder();
+            resetPriorityPbp.WithName("reset-priority-pbp");
+            resetPriorityPbp.WithDescription("Update the backend with the final pbp date.");
+            resetPriorityPbp.AddOption("end-date", ApplicationCommandOptionType.String, "A date. Use Month/Day/Year format.", true);
+            resetPriorityPbp.AddOption("player-one", ApplicationCommandOptionType.User, "A Discord User.", false);
+            resetPriorityPbp.AddOption("player-two", ApplicationCommandOptionType.User, "A Discord User.", false);
+            resetPriorityPbp.AddOption("player-three", ApplicationCommandOptionType.User, "A Discord User.", false);
+            resetPriorityPbp.AddOption("player-four", ApplicationCommandOptionType.User, "A Discord User.", false);
+            resetPriorityPbp.AddOption("player-five", ApplicationCommandOptionType.User, "A Discord User.", false);
+            resetPriorityPbp.AddOption("player-six", ApplicationCommandOptionType.User, "A Discord User.", false);
+
             try
             {
                 foreach (var guild in _client.Guilds)
@@ -177,6 +188,7 @@ namespace EconomyBot
                     await guild.CreateApplicationCommandAsync(appearanceCommand.Build());
                     await guild.CreateApplicationCommandAsync(dtdCommand.Build());
                     await guild.CreateApplicationCommandAsync(updateDBCommand.Build());
+                    await guild.CreateApplicationCommandAsync(resetPriorityPbp.Build());
                 }
             }
             catch (Exception e)
@@ -208,6 +220,11 @@ namespace EconomyBot
                 case "update-db":
                 {
                     await andoraService.UpdateDBCharacterCommand(command);
+                    break;
+                }
+                case "reset-priority-pbp":
+                {
+                    await andoraService.PriorityReset_PBP(command);
                     break;
                 }
                 case "dtd":

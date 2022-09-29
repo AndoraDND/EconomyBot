@@ -57,6 +57,85 @@ namespace EconomyBot.DataStorage
 
         private IList<IList<object>> cachedPlayerCharacterSheet = null;
 
+        public async Task<string> UpdatePriority(DateTime date, params SocketGuildUser[] users)
+        {
+            string range = "'Player character sheet'!A6:Q";
+            string charDBSheetID = "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU";
+
+            var ErrorHandlingPlayers = new List<string>();
+            var OutputPlayers = new List<Tuple<string, DateTime>>();
+            
+            var output = "Process Log:\n";
+
+            await Task.Delay(60000 - (DateTime.Now.Second * 1000)); // This disgusting line is just for avoiding rate limiting. :(
+
+            foreach (var user in users)
+            {
+                if (user == null)
+                    continue;
+
+                #region Post rewards
+
+                //Update Player Character Sheet with new Values.
+                
+                SpreadsheetsResource.ValuesResource.GetRequest request = _service.Spreadsheets.Values.Get(charDBSheetID, range);
+                ValueRange response = await request.ExecuteAsync();
+                cachedPlayerCharacterSheet = response.Values;
+
+                //Tuple<string,string> error = null;
+                //var reward = new CombinedReward()
+                //{
+                //    DiscordUser = user,
+                //    LastExpDate = date,
+                //    XPValue = 0,
+                //    LastPlayedDate = date,
+                //    ReportID = -1
+                //};
+
+                var lastPlayedDate = await GetCurrentPriorityDate(cachedPlayerCharacterSheet, user, date);
+
+                //var error = await UpdateCharacterSheetWithReward(cachedPlayerCharacterSheet, reward);
+
+                //Update the player character sheet
+                if (lastPlayedDate == null && lastPlayedDate.HasValue)
+                {
+                    ErrorHandlingPlayers.Add(user.Username + "#" + user.Discriminator);
+                    //ErrorHandlingPlayers.Add(new PostReport_PlayerError(ReportType.Unknown,
+                    //    reward.ReportID,
+                    //    reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator,
+                    //    reward.XPValue,
+                    //    error.Item1,
+                    //    error.Item2));
+                }
+                else
+                {
+                    OutputPlayers.Add(new Tuple<string, DateTime>(user.Username + "#" + user.Discriminator, lastPlayedDate.Value));
+                }
+
+                await Task.Delay(6000);
+                
+                #endregion
+            }
+
+            #region Output
+
+            //Display output to the calling user.
+            output += "\nPrevious Dates\n";
+            foreach (var player in OutputPlayers)
+            {
+                output += $"{player.Item1} : [{player.Item2}]\n";
+            }
+            output += "\nErrorLog:\n";
+            foreach (var player in ErrorHandlingPlayers)
+            {
+                output += $"{player} - [ Failed to update ]\n";
+            }
+
+            return output;
+
+            #endregion
+        }
+
         /// <summary>
         /// Process the list of reports needing to be processed.
         /// </summary>
@@ -557,6 +636,125 @@ namespace EconomyBot.DataStorage
             return retVal;
         }
 
+        public async Task<DateTime?> GetCurrentPriorityDate(IList<IList<object>> valueList, Discord.IUser user, DateTime? newDate = null)
+        {
+            if (valueList == null && valueList.Count <= 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Error getting current priority : Value list is null or empty!");
+                Console.ForegroundColor = ConsoleColor.White;
+                return null;
+            }
+
+            try
+            {
+                int index = -1;
+                for (int i = 0; i < valueList.Count; i++)
+                {
+                    if (valueList[i].Count <= 0) //We have an empty row.
+                    {
+                        continue;
+                    }
+
+                    if(((string)valueList[i][1]).Equals(user.Username+"#"+user.Discriminator)) //Check if we found our user.
+                    {
+                        index = i+6;
+                        //Console.WriteLine($"{reward.DiscordUser.Username + "#" + reward.DiscordUser.Discriminator} - index[{index}]");
+                        break;
+                    }
+                }
+
+                if(index == -1)
+                {
+                    //Failed to find user in list.
+                    Console.WriteLine($"Failed to find discord user in player character sheet : {user.Username + "#" + user.Discriminator}");
+                    return null;
+                }
+
+                SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum valueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+                
+                //Parse current experience and expected experience gain
+                if(!int.TryParse(((string)valueList[index-6][11]), out var currExp))
+                {
+                    //Current experience column on the Player Character Sheet is botched.
+                    Console.WriteLine($"Failed to poll Player Experience: Check that column is an integer value!");
+                    return null;
+                }
+
+                //Parse current Last Played Date and expected new Date.
+                var dateString = (string)valueList[index - 6][15]; //Check Last Played Date Column
+                if(dateString == null || dateString.Length <= 0)
+                {
+                    //Column was empty
+                    dateString = (string)valueList[index - 6][0]; //Use the Date Created timestamp instead
+                }
+
+                if(!DateTime.TryParse(dateString, out var currLastPlayed)) //Check if parsing the timestamp and column succeeded
+                {
+                    //How even
+                    currLastPlayed = new DateTime(2022, 1, 1);
+                }
+                if (newDate.Value != null)
+                {
+                    var newLastPlayed = newDate.Value < currLastPlayed ? currLastPlayed : newDate.Value;
+
+                    //TODO: Batch requests. https://developers.google.com/sheets/api/guides/batch
+                    //As is, this is stupid. But it works for now.
+
+                    //Update the last played date column of the Player Character Sheet.
+                    IList<IList<object>> updatedValues = new List<IList<object>>();
+                    updatedValues.Add(new List<object>());
+                    updatedValues[0].Add($"{newLastPlayed.ToShortDateString()} {newLastPlayed.ToShortTimeString()}"); //Date last played
+
+                    ValueRange requestBody;
+                    SpreadsheetsResource.ValuesResource.UpdateRequest request;
+                    UpdateValuesResponse response;
+                    try
+                    {
+                        //Update LastPlayedColumn
+                        requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                        request = _service.Spreadsheets.Values.Update(requestBody,
+                            "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                            $"'Player character sheet'!P{index}");
+                        request.ValueInputOption = valueInputOption;
+
+                        response = await request.ExecuteAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.Message.Equals("Google.Apis.Requests.RequestError"))
+                        {
+                            //Rate limited. Try again.
+                            await Task.Delay(60000);
+
+                            requestBody = new ValueRange() { MajorDimension = "COLUMNS", Values = updatedValues };
+                            request = _service.Spreadsheets.Values.Update(requestBody,
+                                "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
+                                $"'Player character sheet'!P{index}");
+                            request.ValueInputOption = valueInputOption;
+
+                            response = await request.ExecuteAsync();
+                        }
+                        else
+                        {
+                            throw e;
+                        }
+                    }
+                }
+                return currLastPlayed;
+            }
+            catch (Exception e)
+            {
+                
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Failed to update character sheet : {e.Message}\n{e.StackTrace}");
+                Console.ForegroundColor = ConsoleColor.White;
+                return null;
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Post a reward to the Player Character Sheet
         /// </summary>
@@ -679,7 +877,7 @@ namespace EconomyBot.DataStorage
                     request = _service.Spreadsheets.Values.Update(requestBody,
                         "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
                         $"'Player character sheet'!P{index}");
-                    request.ValueInputOption = valueInputOption;
+                    request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
 
                     response = await request.ExecuteAsync();
                 }
@@ -694,7 +892,7 @@ namespace EconomyBot.DataStorage
                         request = _service.Spreadsheets.Values.Update(requestBody,
                             "1V0JMpSLVmuenr_kea8UmP8Ii87jo1g_9iG6cf8MF7RU",
                             $"'Player character sheet'!P{index}");
-                        request.ValueInputOption = valueInputOption;
+                        request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
 
                         response = await request.ExecuteAsync();
                     }

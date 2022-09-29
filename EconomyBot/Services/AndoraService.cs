@@ -420,6 +420,81 @@ namespace EconomyBot
             }
         }
         
+        internal async Task PriorityReset_PBP(SocketSlashCommand command)
+        {
+            await command.DeferAsync(true);
+            DateTime newDate = new DateTime(2022, 1, 1);
+
+            var datestring = (string)command.Data.Options.FirstOrDefault(p => p.Name.Equals("end-date")).Value;
+
+            if (!DateTime.TryParse(datestring, out newDate))
+            {
+                await command.FollowupAsync("Failed to parse date string, please try again!");
+                return;
+            }
+
+            try
+            {
+                
+                var userRead1 = command.Data.Options.FirstOrDefault(p => p.Name.Equals("player-one"));
+                var userRead2 = command.Data.Options.FirstOrDefault(p => p.Name.Equals("player-two"));
+                var userRead3 = command.Data.Options.FirstOrDefault(p => p.Name.Equals("player-three"));
+                var userRead4 = command.Data.Options.FirstOrDefault(p => p.Name.Equals("player-four"));
+                var userRead5 = command.Data.Options.FirstOrDefault(p => p.Name.Equals("player-five"));
+                var userRead6 = command.Data.Options.FirstOrDefault(p => p.Name.Equals("player-six"));
+
+                var user1 = (SocketGuildUser)(userRead1 == null ? null : userRead1.Value);
+                var user2 = (SocketGuildUser)(userRead2 == null ? null : userRead2.Value);
+                var user3 = (SocketGuildUser)(userRead3 == null ? null : userRead3.Value);
+                var user4 = (SocketGuildUser)(userRead4 == null ? null : userRead4.Value);
+                var user5 = (SocketGuildUser)(userRead5 == null ? null : userRead5.Value);
+                var user6 = (SocketGuildUser)(userRead6 == null ? null : userRead6.Value);
+
+                //var user = (SocketGuildUser)command.Data.Options.First().Value;
+
+                bool hasElevatedRole = false;
+                foreach (var role in ((SocketGuildUser)command.User).Roles)
+                {
+                    if (ElevatedStatusRoles.Contains(role.Id))
+                    {
+                        hasElevatedRole = true;
+                        break;
+                    }
+                }
+
+                if (hasElevatedRole == false)
+                {
+                    await command.FollowupAsync("You do not have permissions to use this command.");
+                    return;
+                }
+
+                //var characterData = await CharacterDB.GetCharacterData(user.Id);
+
+                var output = await this.PostReportParser.UpdatePriority(newDate, user1, user2, user3, user4, user5, user6);
+
+                //Output file for testing purposes.
+                if (output.Length > 1800)
+                {
+                    var dumpFilePath = System.IO.Directory.GetCurrentDirectory() + $"/Data/{command.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
+                    System.IO.File.WriteAllText(dumpFilePath, output);
+                    await command.FollowupWithFileAsync(dumpFilePath, $"{command.User.Mention}", ephemeral:true);
+                    System.IO.File.Delete(dumpFilePath);
+                }
+                else
+                {
+                    var embedBuilder = new EmbedBuilder()
+                        .WithAuthor($"{(command.User.Username + "#" + command.User.Discriminator)}", command.User.GetAvatarUrl())
+                        .WithDescription(output);
+                    await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: true);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to apply priority change : {e.Message}");
+                await command.FollowupAsync("Failed to apply priority change. See log for details.");
+            }
+        }
+
         #endregion
     }
 }
