@@ -422,7 +422,7 @@ namespace EconomyBot
         
         internal async Task PriorityReset_PBP(SocketSlashCommand command)
         {
-            await command.DeferAsync(true);
+            await command.DeferAsync(false);
             DateTime newDate = new DateTime(2022, 1, 1);
 
             var datestring = (string)command.Data.Options.FirstOrDefault(p => p.Name.Equals("end-date")).Value;
@@ -477,7 +477,7 @@ namespace EconomyBot
                 {
                     var dumpFilePath = System.IO.Directory.GetCurrentDirectory() + $"/Data/{command.User.Id}_DumpLog_" + DateTime.Now.ToShortTimeString().Replace(':', '-').Replace('_', '-') + ".txt";
                     System.IO.File.WriteAllText(dumpFilePath, output);
-                    await command.FollowupWithFileAsync(dumpFilePath, $"{command.User.Mention}", ephemeral:true);
+                    await command.FollowupWithFileAsync(dumpFilePath, $"{command.User.Mention}", ephemeral:false);
                     System.IO.File.Delete(dumpFilePath);
                 }
                 else
@@ -485,7 +485,7 @@ namespace EconomyBot
                     var embedBuilder = new EmbedBuilder()
                         .WithAuthor($"{(command.User.Username + "#" + command.User.Discriminator)}", command.User.GetAvatarUrl())
                         .WithDescription(output);
-                    await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: true);
+                    await command.FollowupAsync(embed: embedBuilder.Build(), ephemeral: false);
                 }
             }
             catch (Exception e)
