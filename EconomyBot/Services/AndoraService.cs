@@ -194,6 +194,12 @@ namespace EconomyBot
             try
             {
                 var user = (SocketGuildUser)command.Data.Options.First().Value;
+                var forceObj = command.Data.Options.Where(p => p.Name.Equals("force")).FirstOrDefault();
+                bool force = false;
+                if(forceObj != default(SocketSlashCommandDataOption))
+                {
+                    force = (bool)forceObj.Value;
+                }
 
                 bool userIsSelf = command.User.Id.Equals(user.Id);
 
@@ -213,7 +219,7 @@ namespace EconomyBot
                     return;
                 }
 
-                var characterData = await CharacterDB.GetCharacterData(user.Id);
+                var characterData = await CharacterDB.GetCharacterData(user.Id, force);
 
                 var embedBuilder = new EmbedBuilder()
                         .WithTitle($"{(user.Nickname != null ? user.Nickname : user.Username + "#" + user.Discriminator)}'s Character Sheet")

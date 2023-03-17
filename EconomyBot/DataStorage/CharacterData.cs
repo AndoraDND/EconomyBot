@@ -89,6 +89,8 @@ namespace EconomyBot.DataStorage
 
         public int Total_NPC_Pings;
 
+        public DateTime Last_Polled;
+
         /// <summary>
         /// URL stub for Avrae-based character sheet
         /// </summary>
@@ -138,6 +140,8 @@ namespace EconomyBot.DataStorage
             Total_Rumor_Part = json.total_rumor_part;
             Total_NPC_Pings = json.total_npc_pings; 
             AvraeURL = json.sheet;
+
+            Last_Polled = DateTime.UtcNow;
         }
 
         /// <summary>

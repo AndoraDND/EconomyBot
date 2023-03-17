@@ -64,7 +64,10 @@ namespace EconomyBot.DataStorage
             var characterDataIndex = _cachedCharacterData.FindIndex(p => p.DiscordID.Equals(discordID));
             if(characterDataIndex >= 0)
             {
-                return _cachedCharacterData[characterDataIndex];
+                if (_cachedCharacterData[characterDataIndex].Last_Polled.AddDays(14) > DateTime.UtcNow)
+                {
+                    return _cachedCharacterData[characterDataIndex];
+                }
             }
 
             //Didn't find character data within cached list

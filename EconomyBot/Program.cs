@@ -140,6 +140,7 @@ namespace EconomyBot
             charSheetCommand.WithName("get-sheet");
             charSheetCommand.WithDescription("Get a User's Character Sheet.");
             charSheetCommand.AddOption("user", ApplicationCommandOptionType.User, "A Discord User.", true);
+            charSheetCommand.AddOption("force", ApplicationCommandOptionType.Boolean, "Force the cache to update", false);
 
             var appearanceCommand = new SlashCommandBuilder();
             appearanceCommand.WithName("appearance");
